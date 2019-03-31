@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,38 @@
  */
 package org.opencypher.okapi.api.graph
 
-trait GraphEntityType {
+/**
+  * This trait represents different types of id keys a graph entity can have.
+  */
+sealed trait IdKey {
+  def name: String
+}
+
+/**
+  * A SourceIdKey represents an id which uniquely identifies it's containing entity
+  */
+case object SourceIdKey extends IdKey {
+  override def name: String = "id"
+}
+
+/**
+  * A SourceStartNodeKey represents an id which identifies the start node of a relationship
+  */
+case object SourceStartNodeKey extends IdKey {
+  override def name: String = "source"
+}
+
+/**
+  * A SourceEndNodeKey represents an id which identifies the end node of a relationship
+  */
+case object SourceEndNodeKey extends IdKey {
+  override def name: String = "target"
+}
+
+/**
+  * Enum trait to distinguish between different graph entity types
+  */
+sealed trait GraphEntityType {
   def name: String
 }
 

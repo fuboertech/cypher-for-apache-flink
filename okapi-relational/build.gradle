@@ -1,0 +1,24 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+description = 'Okapi Relational - Relational Algebra for Cypher'
+
+dependencies {
+    compile project(':okapi-logical')
+
+    testCompile project(':okapi-testing')
+}
+
+task allJar(type: ShadowJar) {
+    classifier = 'all'
+
+    from project.sourceSets.main.output
+    configurations = [project.configurations.runtime]
+
+    dependencies {
+        exclude(dependency('org.scala-lang:'))
+        exclude(dependency('org.scala-lang.modules:'))
+    }
+    exclude "META-INF/versions/**/*"
+}
+
+pub.full.artifacts += 'allJar'

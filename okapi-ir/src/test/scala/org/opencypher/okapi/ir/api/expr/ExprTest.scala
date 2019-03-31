@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class ExprTest extends BaseTestSuite {
     val r = Var("a")(CTString)
     n should equal(r)
 
-    val a = StartNode(Var("rel")(CTRelationship))(CTWildcard)
+    val a = StartNode(Var("rel")(CTRelationship))(CTAny)
     val b = StartNode(Var("rel")(CTRelationship))(CTNode)
     a should equal(b)
   }
@@ -46,33 +46,27 @@ class ExprTest extends BaseTestSuite {
     val r = Var("a")(CTRelationship("b"))
     n.hashCode should equal(r.hashCode)
 
-    val a = StartNode(Var("rel")(CTRelationship))(CTWildcard)
+    val a = StartNode(Var("rel")(CTRelationship))(CTAny)
     val b = StartNode(Var("rel")(CTRelationship))(CTNode)
     a.hashCode should equal(b.hashCode)
   }
 
   test("different expressions are not equal") {
-    val p = Param("a")()
+    val p = Param("a")(CTAny)
     val v = Var("a")()
     p should not equal v
   }
 
   test("different expressions have different hash codes") {
-    val p = Param("a")()
+    val p = Param("a")(CTAny)
     val v = Var("b")()
     p.hashCode should not equal v.hashCode
   }
 
-  test("alias expression has same type") {
+  test("alias expression has updated type") {
     val n = Var("n")(CTNode)
-    (n as Var("m")()).cypherType should equal(n.cypherType)
-  }
-
-  test("set new cypher type") {
-    val n = Var("n")(CTNode("A"))
-    val updatedN = n.withCypherType(CTNode("B").nullable)
-    updatedN should equal(n)
-    updatedN.cypherType should equal(CTNode("B").nullable)
+    val aliasVar = Var("m")()
+    (n as aliasVar).cypherType should equal(aliasVar.cypherType)
   }
 
 }

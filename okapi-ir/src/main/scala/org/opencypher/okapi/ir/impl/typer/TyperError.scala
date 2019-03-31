@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import cats.syntax.show._
 import org.opencypher.okapi.api.types._
 import org.opencypher.v9_0.expressions.Expression
 
-sealed trait TyperError
+sealed trait TyperError extends Throwable {
+  override def getMessage: String = toString
+}
 
 case class UnsupportedExpr(expr: Expression) extends TyperError {
   override def toString = s"The expression ${expr.show} is not supported by the system"
@@ -40,7 +42,7 @@ case class UnTypedExpr(it: Expression) extends TyperError {
   override def toString = s"Expected a type for ${it.show} but found none"
 }
 
-case class UnTypedParameter(it: String) extends TyperError {
+case class MissingParameter(it: String) extends TyperError {
   override def toString = s"Expected a type for $$$it but found none"
 }
 

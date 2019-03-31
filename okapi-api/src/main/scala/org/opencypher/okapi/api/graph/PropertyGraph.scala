@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,4 +102,13 @@ trait PropertyGraph {
     drivingTable: Option[CypherRecords] = None,
     queryCatalog: Map[QualifiedGraphName, PropertyGraph] = Map.empty
   ): CypherResult = session.cypherOnGraph(this, query, parameters, drivingTable, queryCatalog)
+
+  /**
+    * Returns all patterns that the graph can provide
+    *
+    * @return patterns that the graph can provide
+    */
+  def patterns: Set[Pattern] =
+    schema.labelCombinations.combos.map(c => NodePattern(CTNode(c))) ++
+    schema.relationshipTypes.map(r => RelationshipPattern(CTRelationship(r)))
 }

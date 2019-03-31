@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,16 @@ import org.opencypher.okapi.logical.impl.LogicalOperator
 import org.opencypher.okapi.relational.api.graph.{RelationalCypherGraph, RelationalCypherSession}
 import org.opencypher.okapi.relational.api.table.{RelationalCypherRecords, Table}
 import org.opencypher.okapi.relational.impl.operators.{RelationalOperator, ReturnGraph}
+import org.opencypher.okapi.relational.impl.planning.RelationalPlanner._
 
-case class RelationalCypherResult[T <: Table[T]](
+import scala.reflect.runtime.universe.TypeTag
+
+case class RelationalCypherResult[T <: Table[T] : TypeTag](
   maybeLogical: Option[LogicalOperator],
   maybeRelational: Option[RelationalOperator[T]]
 )(implicit session: RelationalCypherSession[T]) extends CypherResult {
+
+  override type Records = RelationalCypherRecords[T]
 
   override type Graph = RelationalCypherGraph[T]
 
@@ -45,11 +50,27 @@ case class RelationalCypherResult[T <: Table[T]](
     case _ => None
   }
 
-  override def getRecords: Option[RelationalCypherRecords[T]] =
-    maybeRelational.flatMap {
-      case _: ReturnGraph[T] => None
-      case other => Some(session.records.from(other.header, other.table, other.returnItems.map(_.map(_.name))))
-    }
+  /**
+    * Returns records with minimal number of columns and arbitrary column names.
+    * The column structure is reflected in the RecordHeader.
+    */
+  def getInternalRecords: Option[Records] = maybeRelational.flatMap {
+    case _: ReturnGraph[T] => None
+    case relationalOperator => Some(session.records.from(
+      relationalOperator.header,
+      relationalOperator.table,
+      relationalOperator.maybeReturnItems.map(_.map(_.name))))
+  }
+
+  override def getRecords: Option[Records] = maybeRelational.flatMap {
+    case _: ReturnGraph[T] => None
+    case relationalOperator =>
+      val alignedResult = relationalOperator.alignColumnsWithReturnItems
+      Some(session.records.from(
+        alignedResult.header,
+        alignedResult.table,
+        alignedResult.maybeReturnItems.map(_.map(_.name))))
+  }
 
   override def show(implicit options: PrintOptions): Unit = getRecords match {
     case Some(r) => r.show
@@ -61,10 +82,10 @@ case class RelationalCypherResult[T <: Table[T]](
 
 object RelationalCypherResult {
 
-  def empty[T <: Table[T]](implicit session: RelationalCypherSession[T]): RelationalCypherResult[T] =
+  def empty[T <: Table[T] : TypeTag](implicit session: RelationalCypherSession[T]): RelationalCypherResult[T] =
     RelationalCypherResult(None, None)
 
-  def apply[T <: Table[T]](
+  def apply[T <: Table[T] : TypeTag](
     logical: LogicalOperator,
     relational: RelationalOperator[T]
   )(implicit session: RelationalCypherSession[T]): RelationalCypherResult[T] =

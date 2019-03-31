@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,13 @@
 package org.opencypher.spark.impl.io.neo4j.external
 
 import org.junit.Assert.assertEquals
+import org.opencypher.okapi.neo4j.io.testing.Neo4jServerFixture
 import org.opencypher.okapi.testing.BaseTestSuite
-import org.opencypher.spark.testing.fixture.{CAPSNeo4jServerFixture, SparkSessionFixture}
+import org.opencypher.spark.testing.fixture.SparkSessionFixture
 
 class Neo4jTest extends BaseTestSuite
   with SparkSessionFixture
-  with CAPSNeo4jServerFixture {
+  with Neo4jServerFixture {
 
   override def dataFixture: String =
     """

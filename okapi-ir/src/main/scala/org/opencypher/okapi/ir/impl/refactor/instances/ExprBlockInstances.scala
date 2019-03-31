@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,9 +37,9 @@ trait ExprBlockInstances {
 
   private implicit class RichIRField(f: IRField) {
     def representsNode(v: Var): Boolean =
-      f.name == v.name && f.cypherType.subTypeOf(CTNode).isTrue
+      f.name == v.name && f.cypherType.subTypeOf(CTNode)
     def representsRel(v: Var): Boolean =
-      f.name == v.name && f.cypherType.subTypeOf(CTRelationship).isTrue
+      f.name == v.name && f.cypherType.subTypeOf(CTRelationship)
     def withLabel(l: Label): IRField = {
       f.copy()(cypherType = f.cypherType.meet(CTNode(Set(l.name), f.cypherType.graph)))
     }

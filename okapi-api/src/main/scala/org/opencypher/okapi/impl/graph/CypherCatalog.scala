@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,12 @@
  */
 package org.opencypher.okapi.impl.graph
 
+import org.opencypher.v9_0.ast._
 import org.opencypher.okapi.api.graph._
 import org.opencypher.okapi.api.io.PropertyGraphDataSource
 import org.opencypher.okapi.api.value.CypherValue.CypherString
-import org.opencypher.okapi.impl.annotations.experimental
 import org.opencypher.okapi.impl.exception.{IllegalArgumentException, UnsupportedOperationException, ViewAlreadyExistsException}
 import org.opencypher.okapi.impl.io.SessionGraphDataSource
-import org.opencypher.v9_0.ast.{FromGraph, GraphByParameter, GraphLookup, ViewInvocation}
 
 object CypherCatalog {
   def apply(graphs: (QualifiedGraphName, PropertyGraph)*): CypherCatalog = {

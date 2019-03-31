@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,13 +63,13 @@ object CAPSTestValues {
       CAPSNode(1, Set("Person"), CypherMap("a" -> 1, "b" -> CypherNull)),
       CAPSNode(1, Set("Person"), CypherMap("a" -> 1.0d, "b" -> CypherNull))
     ),
-    Seq[CypherValue](CAPSNode(10, Set(), CypherMap("a" -> 1))),
+    Seq[CypherValue](CAPSNode(10L, Set.empty[String], CypherMap("a" -> 1))),
     Seq[CypherValue](
-      CAPSNode(20, Set("MathGuy"), CypherMap("a" -> 1, "b" -> 1))),
+      CAPSNode(20L, Set("MathGuy"), CypherMap("a" -> 1, "b" -> 1))),
     Seq[CypherValue](
-      CAPSNode(21, Set("MathGuy", "FanOfNulls"), CypherMap("b" -> CypherNull))),
-    Seq[CypherValue](CAPSNode(30, Set("NoOne"), CypherMap.empty)),
-    Seq[CypherValue](CAPSNode(40, Set(), CypherMap("c" -> 10, "b" -> CypherNull))),
+      CAPSNode(21L, Set("MathGuy", "FanOfNulls"), CypherMap("b" -> CypherNull))),
+    Seq[CypherValue](CAPSNode(30L, Set("NoOne"), CypherMap.empty)),
+    Seq[CypherValue](CAPSNode(40L, Set.empty[String], CypherMap("c" -> 10, "b" -> CypherNull))),
     Seq[CypherValue](CypherNull)
   )
 

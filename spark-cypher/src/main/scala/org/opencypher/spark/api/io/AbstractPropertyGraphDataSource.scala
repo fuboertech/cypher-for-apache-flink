@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
 import org.opencypher.okapi.api.graph.{GraphName, PropertyGraph}
 import org.opencypher.okapi.api.schema.Schema
-import org.opencypher.okapi.api.types.{CTInteger, CypherType}
+import org.opencypher.okapi.api.types.{CTIdentity, CypherType}
 import org.opencypher.okapi.impl.exception.GraphNotFoundException
 import org.opencypher.okapi.impl.util.StringEncodingUtilities._
 import org.opencypher.spark.api.CAPSSession
@@ -53,14 +53,14 @@ object AbstractPropertyGraphDataSource {
     val propertyColsWithCypherType = schema.nodePropertyKeysForCombinations(Set(labelCombination)).map {
       case (key, cypherType) => key.toPropertyColumnName -> cypherType
     }
-    propertyColsWithCypherType + (GraphEntity.sourceIdKey -> CTInteger)
+    propertyColsWithCypherType + (GraphEntity.sourceIdKey -> CTIdentity)
   }
 
   def relColsWithCypherType(schema: Schema, relType: String): Map[String, CypherType] = {
     val propertyColsWithCypherType = schema.relationshipPropertyKeys(relType).map {
       case (key, cypherType) => key.toPropertyColumnName -> cypherType
     }
-    propertyColsWithCypherType ++ Relationship.nonPropertyAttributes.map(_ -> CTInteger)
+    propertyColsWithCypherType ++ Relationship.nonPropertyAttributes.map(_ -> CTIdentity)
   }
 }
 
@@ -84,7 +84,7 @@ abstract class AbstractPropertyGraphDataSource extends CAPSPropertyGraphDataSour
 
   protected def deleteGraph(graphName: GraphName): Unit
 
-  protected def readSchema(graphName: GraphName): CAPSSchema
+  protected[io] def readSchema(graphName: GraphName): CAPSSchema
 
   protected def writeSchema(graphName: GraphName, schema: CAPSSchema): Unit
 
@@ -127,7 +127,7 @@ abstract class AbstractPropertyGraphDataSource extends CAPSPropertyGraphDataSour
       if (nodeTables.isEmpty) {
         caps.graphs.empty
       } else {
-        caps.graphs.create(capsMetaData.tags, Some(capsSchema), (nodeTables ++ relTables).toSeq: _*)
+        caps.graphs.create(Some(capsSchema), (nodeTables ++ relTables).toSeq: _*)
       }
     }
   }
@@ -157,7 +157,7 @@ abstract class AbstractPropertyGraphDataSource extends CAPSPropertyGraphDataSour
       val schema = relationalGraph.schema.asCaps
       schemaCache += graphName -> schema
       graphNameCache += graphName
-      writeCAPSGraphMetaData(graphName, CAPSGraphMetaData(tableStorageFormat.name, relationalGraph.tags))
+      writeCAPSGraphMetaData(graphName, CAPSGraphMetaData(tableStorageFormat.name))
       writeSchema(graphName, schema)
 
       val nodeWrites = schema.labelCombinations.combos.map { combo =>

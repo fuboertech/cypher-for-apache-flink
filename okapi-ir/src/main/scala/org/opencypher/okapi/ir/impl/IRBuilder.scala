@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -525,9 +525,9 @@ object IRBuilder extends CompilationStage[ast.Statement, CypherStatement, IRBuil
         case CTAny =>
           pure[R, CypherType](CTAny)
         case CTVoid =>
-          pure[R, CypherType](CTNull)
+          pure[R, CypherType](CTVoid)
         case x =>
-          error(IRBuilderError(s"unwind expression was not a list: $x"))(CTWildcard: CypherType)
+          error(IRBuilderError(s"unwind expression was not a list: $x"))(CTAny)
       }
       field <- {
         val field = IRField(variable.name)(typ)

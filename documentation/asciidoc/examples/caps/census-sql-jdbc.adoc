@@ -1,0 +1,7 @@
+[[example-census-sql-jdbc]]
+= Census SQL graph source example using JDBC
+
+[source, scala]
+----
+include::{examples-dir}/CensusJdbcExample.scala[tags=full-example]
+----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import org.opencypher.okapi.ir.api.IRField
 import org.opencypher.okapi.ir.api.pattern.{DirectedRelationship, Pattern}
 import org.opencypher.okapi.testing.BaseTestSuite
 
+import scala.collection.immutable.ListMap
+
 class RichSchemaTest extends BaseTestSuite {
     describe("fromFields") {
       it("can convert fields in a pattern") {
@@ -47,7 +49,7 @@ class RichSchemaTest extends BaseTestSuite {
             IRField("r")(CTRelationship("BAR")),
             IRField("m")(CTNode("Person"))
           ),
-          Map(
+          ListMap(
             IRField("r")(CTRelationship("BAR")) -> DirectedRelationship(IRField("n")(CTNode("Person")), IRField("m")(CTNode("Person")))
           )
         ).fields.map(f => schema.forEntityType(f.cypherType)).reduce(_ ++ _)
@@ -72,7 +74,7 @@ class RichSchemaTest extends BaseTestSuite {
             IRField("r")(CTRelationship("BAR")),
             IRField("m")(CTNode())
           ),
-          Map(
+          ListMap(
             IRField("r")(CTRelationship("BAR")) -> DirectedRelationship(IRField("n")(CTNode("Person")), IRField("m")(CTNode()))
           )
         ).fields.map(f => schema.forEntityType(f.cypherType)).reduce(_ ++ _)

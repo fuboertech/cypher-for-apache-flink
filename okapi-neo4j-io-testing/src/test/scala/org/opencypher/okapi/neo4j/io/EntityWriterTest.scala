@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ class EntityWriterTest extends BaseTestSuite with Neo4jServerFixture with Before
       )
     }.toBag
 
-    val result = neo4jConfig.cypher(s"MATCH (n) RETURN n.$metaPropertyKey, n.val1, n.val2, n.val3").map(CypherMap).toBag
+    val result = neo4jConfig.cypherWithNewSession(s"MATCH (n) RETURN n.$metaPropertyKey, n.val1, n.val2, n.val3").map(CypherMap).toBag
     result should equal(expected)
   }
 
@@ -78,7 +78,7 @@ class EntityWriterTest extends BaseTestSuite with Neo4jServerFixture with Before
       )
     }.toBag
 
-    val result = neo4jConfig.cypher(s"MATCH ()-[r]->() RETURN r.$metaPropertyKey, r.val3").map(CypherMap).toBag
+    val result = neo4jConfig.cypherWithNewSession(s"MATCH ()-[r]->() RETURN r.$metaPropertyKey, r.val3").map(CypherMap).toBag
     result should equal(expected)
   }
 

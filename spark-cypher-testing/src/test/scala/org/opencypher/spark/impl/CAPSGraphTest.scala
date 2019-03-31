@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@
 package org.opencypher.spark.impl
 
 import org.apache.spark.sql.Row
-import org.opencypher.okapi.api.io.conversion.RelationshipMapping
 import org.opencypher.okapi.api.types._
 import org.opencypher.okapi.relational.api.planning.RelationalRuntimeContext
 import org.opencypher.okapi.relational.api.table.RelationalCypherRecords
 import org.opencypher.okapi.relational.impl.operators.Start
 import org.opencypher.okapi.testing.Bag
-import org.opencypher.spark.api.io.{CAPSNodeTable, CAPSRelationshipTable}
+import org.opencypher.spark.api.io.CAPSEntityTable
+import org.opencypher.spark.api.value.CAPSEntity._
 import org.opencypher.spark.impl.table.SparkTable.DataFrameTable
 import org.opencypher.spark.testing.CAPSTestSuite
 import org.opencypher.spark.testing.fixture.{GraphConstructionFixture, RecordsVerificationFixture, TeamDataFixture}
@@ -50,7 +50,7 @@ abstract class CAPSGraphTest extends CAPSTestSuite
       def planStart: Start[DataFrameTable] = {
         implicit val tableTypeTag: universe.TypeTag[DataFrameTable] = caps.tableTypeTag
         implicit val context: RelationalRuntimeContext[DataFrameTable] = caps.basicRuntimeContext()
-        Start(records)
+        Start.fromEmptyGraph(records)
       }
     }
   }
@@ -64,7 +64,7 @@ abstract class CAPSGraphTest extends CAPSTestSuite
       nHasPropertyLuckyNumber,
       nHasPropertyName
     )
-    verify(nodes, cols, Bag(Row(4L, true, 8L, "Donald")))
+    verify(nodes, cols, Bag(Row(4L.encodeAsCAPSId.toList, true, 8L, "Donald")))
   }
 
   it("should return only nodes with that exact label (multiple labels)") {
@@ -78,9 +78,9 @@ abstract class CAPSGraphTest extends CAPSTestSuite
       nHasPropertyName
     )
     val data = Bag(
-      Row(2L, true, true, 1337L, "Martin"),
-      Row(3L, true, true, 8L, "Max"),
-      Row(0L, true, true, 42L, "Stefan")
+      Row(2L.encodeAsCAPSId.toList, true, true, 1337L, "Martin"),
+      Row(3L.encodeAsCAPSId.toList, true, true, 8L, "Max"),
+      Row(0L.encodeAsCAPSId.toList, true, true, 42L, "Stefan")
     )
     verify(nodes, cols, data)
   }
@@ -93,7 +93,7 @@ abstract class CAPSGraphTest extends CAPSTestSuite
         (6L, false, "Hannes", 42L))
     ).toDF("ID", "IS_SWEDE", "NAME", "NUM")
 
-    val personTable2 = CAPSNodeTable.fromMapping(personTable.mapping, personsPart2)
+    val personTable2 = CAPSEntityTable.create(personTable.mapping, personsPart2)
 
     val graph = caps.graphs.create(personTable, personTable2)
     graph.nodes("n").size shouldBe 6
@@ -107,7 +107,7 @@ abstract class CAPSGraphTest extends CAPSTestSuite
         (1L, 8L, 3L, 2016L))
     ).toDF("SRC", "ID", "DST", "SINCE")
 
-    val knowsTable2 = CAPSRelationshipTable.fromMapping(knowsTable.mapping, knowsParts2)
+    val knowsTable2 = CAPSEntityTable.create(knowsTable.mapping, knowsParts2)
 
     val graph = caps.graphs.create(personTable, knowsTable, knowsTable2)
     graph.relationships("r").size shouldBe 8
@@ -117,29 +117,5 @@ abstract class CAPSGraphTest extends CAPSTestSuite
     val graph = caps.graphs.create(personTable, knowsTable)
     graph.nodes("n", CTNode("BAR")).size shouldBe 0
     graph.relationships("r", CTRelationship("FOO")).size shouldBe 0
-  }
-
-  it("should handle a single df containing multiple relationship types") {
-    val yingYang = caps.sparkSession.createDataFrame(
-      Seq(
-        (1L, 8L, 3L, "HATES"),
-        (1L, 3L, 4L, "HATES"),
-        (2L, 4L, 3L, "LOVES"),
-        (2L, 5L, 4L, "LOVES"),
-        (3L, 6L, 4L, "LOVES"))
-    ).toDF("SRC", "ID", "DST", "TYPE")
-
-    val relMapping = RelationshipMapping
-      .on("ID")
-      .from("SRC")
-      .to("DST")
-      .withSourceRelTypeKey("TYPE", Set("HATES", "LOVES"))
-
-    val relTable = CAPSRelationshipTable.fromMapping(relMapping, yingYang)
-
-    val graph = caps.graphs.create(personTable, relTable)
-
-    graph.relationships("l", CTRelationship("LOVES")).size shouldBe 3
-    graph.relationships("h", CTRelationship("HATES")).size shouldBe 2
   }
 }

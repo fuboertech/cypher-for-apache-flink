@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,6 @@ import org.opencypher.okapi.relational.api.graph.{RelationalCypherGraph, Relatio
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.impl.table.SparkTable.DataFrameTable
 
-case class CAPSGraphFactory(implicit val session: CAPSSession) extends RelationalCypherGraphFactory[DataFrameTable] {
+case class CAPSGraphFactory()(implicit val session: CAPSSession) extends RelationalCypherGraphFactory[DataFrameTable] {
   override type Graph = RelationalCypherGraph[DataFrameTable]
 }

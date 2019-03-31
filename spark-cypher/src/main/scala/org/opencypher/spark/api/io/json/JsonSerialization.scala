@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ trait JsonSerialization {
 
   protected def writeJsonCAPSGraphMetaData(graphName: GraphName, capsGraphMetaData: String): Unit
 
-  override protected def readSchema(graphName: GraphName): CAPSSchema = {
+  override protected[io] def readSchema(graphName: GraphName): CAPSSchema = {
     Schema.fromJson(readJsonSchema(graphName)).asCaps
   }
 

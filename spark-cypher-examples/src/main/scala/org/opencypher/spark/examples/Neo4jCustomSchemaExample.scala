@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,22 +30,24 @@ package org.opencypher.spark.examples
 import org.apache.hadoop.fs.FileSystem
 import org.opencypher.okapi.api.graph.Namespace
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport
-import org.opencypher.okapi.neo4j.io.testing.Neo4jHarnessUtils._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jTestUtils._
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.testing.support.creation.CAPSNeo4jHarnessUtils._
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * Demonstrates how to initialise a Neo4j PGDS with a pre-written schema.
   *
   * Also shows how to get the schema out of the Neo4j PGDS and store it in a filesystem.
   */
-object Neo4jCustomSchemaExample extends ConsoleApp {
+object Neo4jCustomSchemaExample extends App {
   // Create CAPS session
   implicit val session: CAPSSession = CAPSSession.local()
 
-  // Start a Neo4j instance and populate it with social network data
-  val neo4j = startNeo4j(personNetwork).withSchemaProcedure
+  // Connect to a Neo4j instance and populate it with social network data
+  // To run a test instance you may use
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStart
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStop
+  val neo4j = connectNeo4j(personNetwork)
 
   // Initialise schema from serialised file
   // This bypasses the automatic schema computation
@@ -53,7 +55,7 @@ object Neo4jCustomSchemaExample extends ConsoleApp {
   val schemaPath = getClass.getResource("/schema.json").getPath
 
   val neoNamespace = Namespace("socialNetwork")
-  val pgds = GraphSources.cypher.neo4j(neo4j.dataSourceConfig)
+  val pgds = GraphSources.cypher.neo4j(neo4j.config)
   session.registerSource(neoNamespace, pgds)
 
   // If we didn't already have the schema (first time we connect to a Neo4j db, or the db has changed and we need to update)
@@ -81,8 +83,8 @@ object Neo4jCustomSchemaExample extends ConsoleApp {
     """.stripMargin)
     .show
 
-  // Shutdown Neo4j test instance
-  neo4j.stop()
+  // Reset Neo4j test instance and close the session and driver
+  neo4j.close()
 
   def personNetwork =
     s"""|CREATE (a:Person { name: 'Alice', age: 10 })

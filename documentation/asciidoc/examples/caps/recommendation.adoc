@@ -1,0 +1,7 @@
+[[example-recommendation]]
+= Recommendation
+
+[source, scala]
+----
+include::{examples-dir}/RecommendationExample.scala[tags=full-example]
+----

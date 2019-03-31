@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import cats.syntax.flatMap._
 import org.opencypher.okapi.api.graph.QualifiedGraphName
 import org.opencypher.okapi.api.types._
 import org.opencypher.okapi.impl.exception.{IllegalArgumentException, NotImplementedException}
+import org.opencypher.okapi.impl.types.CypherTypeUtils._
 import org.opencypher.okapi.ir.api._
 import org.opencypher.okapi.ir.api.expr._
 import org.opencypher.okapi.ir.api.pattern._
@@ -44,7 +45,7 @@ import org.opencypher.v9_0.{expressions => ast}
 
 import scala.annotation.tailrec
 
-final class PatternConverter()(implicit val irBuilderContext: IRBuilderContext) {
+final class PatternConverter(irBuilderContext: IRBuilderContext) {
 
   type Result[A] = State[Pattern, A]
 
@@ -90,7 +91,7 @@ final class PatternConverter()(implicit val irBuilderContext: IRBuilderContext) 
         val patternLabels = labels.map(_.name).toSet
 
         val baseNodeCypherTypeOpt = baseNodeVar.map(knownTypes)
-        val baseNodeLabels = baseNodeCypherTypeOpt.map(_.asInstanceOf[CTNode].labels).getOrElse(Set.empty)
+        val baseNodeLabels = baseNodeCypherTypeOpt.map(_.toCTNode.labels).getOrElse(Set.empty)
 
         // labels defined in outside scope, passed in by IRBuilder
         val (knownLabels, qgnOption) = vOpt.flatMap(expr => knownTypes.get(expr)).flatMap {
@@ -134,7 +135,7 @@ final class PatternConverter()(implicit val irBuilderContext: IRBuilderContext) 
                 val upper = range.upper
                   .map(_.value.intValue())
                   .getOrElse(throw NotImplementedException("Support for unbounded var-length not yet implemented"))
-                val relType = relVar.cypherType.asInstanceOf[CTRelationship]
+                val relType = relVar.cypherType.toCTRelationship
 
                 Endpoints.apply(source, target) match {
                   case _: IdenticalEndpoints =>
@@ -143,10 +144,10 @@ final class PatternConverter()(implicit val irBuilderContext: IRBuilderContext) 
                   case ends: DifferentEndpoints =>
                     dir match {
                       case OUTGOING =>
-                        registered.withConnection(rel, DirectedVarLengthRelationship(relType, ends, lower, Some(upper)), convertedProperties)
+                        registered.withConnection(rel, DirectedVarLengthRelationship(relType, ends, lower, Some(upper), OUTGOING), convertedProperties)
 
                       case INCOMING =>
-                        registered.withConnection(rel, DirectedVarLengthRelationship(relType, ends.flip, lower, Some(upper)), convertedProperties)
+                        registered.withConnection(rel, DirectedVarLengthRelationship(relType, ends.flip, lower, Some(upper), INCOMING), convertedProperties)
 
                       case BOTH =>
                         registered.withConnection(rel, UndirectedVarLengthRelationship(relType, ends.flip, lower, Some(upper)), convertedProperties)
@@ -161,10 +162,10 @@ final class PatternConverter()(implicit val irBuilderContext: IRBuilderContext) 
                   case ends: DifferentEndpoints =>
                     dir match {
                       case OUTGOING =>
-                        registered.withConnection(rel, DirectedRelationship(ends), convertedProperties)
+                        registered.withConnection(rel, DirectedRelationship(ends, OUTGOING), convertedProperties)
 
                       case INCOMING =>
-                        registered.withConnection(rel, DirectedRelationship(ends.flip), convertedProperties)
+                        registered.withConnection(rel, DirectedRelationship(ends.flip, INCOMING), convertedProperties)
 
                       case BOTH =>
                         registered.withConnection(rel, UndirectedRelationship(ends), convertedProperties)
@@ -200,7 +201,7 @@ final class PatternConverter()(implicit val irBuilderContext: IRBuilderContext) 
     val patternTypes = types.map(_.name).toSet
 
     val baseRelCypherTypeOpt = baseRelOpt.map(knownTypes)
-    val baseRelTypes = baseRelCypherTypeOpt.map(_.asInstanceOf[CTRelationship].types).getOrElse(Set.empty)
+    val baseRelTypes = baseRelCypherTypeOpt.map(_.toCTRelationship.types).getOrElse(Set.empty)
 
     // types defined in outside scope, passed in by IRBuilder
     val (knownRelTypes, qgnOption) = eOpt.flatMap(expr => knownTypes.get(expr)).flatMap {

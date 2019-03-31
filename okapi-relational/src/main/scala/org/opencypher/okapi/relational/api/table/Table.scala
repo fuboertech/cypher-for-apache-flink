@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 package org.opencypher.okapi.relational.api.table
 
 import org.opencypher.okapi.api.table.CypherTable
-import org.opencypher.okapi.api.types.{CTNull, CypherType}
+import org.opencypher.okapi.api.types.CypherType
 import org.opencypher.okapi.api.value.CypherValue.CypherMap
 import org.opencypher.okapi.ir.api.expr.{Aggregator, Expr, Var}
 import org.opencypher.okapi.relational.api.graph.RelationalCypherSession
@@ -58,7 +58,18 @@ trait Table[T <: Table[T]] extends CypherTable {
     * @param cols columns to select
     * @return table containing only requested columns
     */
-  def select(cols: String*): T
+  def select(cols: String*): T = {
+    val tuples = cols.zip(cols)
+    select(tuples.head, tuples.tail: _*)
+  }
+
+  /**
+    * Returns a table containing only the given columns. The column order within the table is aligned with the argument.
+    *
+    * @param cols columns to select and their alias
+    * @return table containing only requested aliased columns
+    */
+  def select(col: (String, String), cols: (String, String)*): T
 
   /**
     * Returns a table containing only rows where the given expression evaluates to true.
@@ -147,7 +158,7 @@ trait Table[T <: Table[T]] extends CypherTable {
     * @param parameters   query parameters
     * @return table grouped by the given keys and results of possible aggregate functions
     */
-  def group(by: Set[Var], aggregations: Set[(Aggregator, (String, CypherType))])
+  def group(by: Set[Var], aggregations: Map[String, Aggregator])
     (implicit header: RecordHeader, parameters: CypherMap): T
 
   /**
@@ -160,15 +171,6 @@ trait Table[T <: Table[T]] extends CypherTable {
     * @return
     */
   def withColumns(columns: (Expr, String)*)(implicit header: RecordHeader, parameters: CypherMap): T
-
-  /**
-    * Returns a table with a renamed column name.
-    *
-    * @param oldColumn current column name
-    * @param newColumn new column name
-    * @return table with renamed column
-    */
-  def withColumnRenamed(oldColumn: String, newColumn: String): T
 
   /**
     * Prints the table to the system console.

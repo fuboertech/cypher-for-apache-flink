@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,17 @@ import cats.data.State._
 import cats.instances.list._
 import cats.syntax.all._
 import org.opencypher.v9_0.ast._
-import org.opencypher.okapi.api.value.CypherValue.{CypherEntity, CypherMap, CypherNode, CypherRelationship}
-import org.opencypher.okapi.impl.exception.{IllegalArgumentException, UnsupportedOperationException}
-import org.opencypher.v9_0.ast.semantics.{SemanticErrorDef, SemanticState}
+import org.opencypher.v9_0.ast.semantics._
 import org.opencypher.v9_0.expressions._
 import org.opencypher.v9_0.frontend.phases._
 import org.opencypher.v9_0.rewriting.Deprecations.V2
+import org.opencypher.v9_0.rewriting._
 import org.opencypher.v9_0.rewriting.rewriters.Never
-import org.opencypher.v9_0.rewriting.{AstRewritingMonitor, RewriterStepSequencer}
 import org.opencypher.v9_0.util.{ASTNode, CypherException, InputPosition}
+import org.opencypher.okapi.api.value.CypherValue.{CypherEntity, CypherMap, CypherNode, CypherRelationship}
+import org.opencypher.okapi.impl.exception.{IllegalArgumentException, UnsupportedOperationException}
+import org.opencypher.okapi.impl.temporal.TemporalTypesHelper.parseDate
+import org.opencypher.okapi.impl.temporal.{Duration, TemporalTypesHelper}
 
 import scala.collection.TraversableOnce
 import scala.reflect.ClassTag
@@ -110,7 +112,10 @@ object CreateGraphFactory extends InMemoryGraphFactory {
       case head :: tail =>
         head match {
           case Create(pattern) =>
-            processPattern(pattern) >> processClauses(tail)
+            processPattern(pattern, merge = false) >> processClauses(tail)
+
+          case Merge(pattern, _, _) =>
+            processPattern(pattern, merge = true) >> processClauses(tail)
 
           case Unwind(expr, variable) =>
             for {
@@ -132,16 +137,16 @@ object CreateGraphFactory extends InMemoryGraphFactory {
     }
   }
 
-  def processPattern(pattern: Pattern): Result[Unit] = {
+  def processPattern(pattern: Pattern, merge: Boolean): Result[Unit] = {
     val parts = pattern.patternParts.map {
       case EveryPath(element) => element
       case other => throw UnsupportedOperationException(s"Processing pattern: ${other.getClass.getSimpleName}")
     }
 
-    Foldable[List].sequence_[Result, CypherEntity[Long]](parts.toList.map(pe => processPatternElement(pe)))
+    Foldable[List].sequence_[Result, CypherEntity[Long]](parts.toList.map(pe => processPatternElement(pe, merge)))
   }
 
-  def processPatternElement(patternElement: ASTNode): Result[CypherEntity[Long]] = {
+  def processPatternElement(patternElement: ASTNode, merge: Boolean): Result[CypherEntity[Long]] = {
     patternElement match {
       case NodePattern(Some(variable), labels, props, _) =>
         for {
@@ -159,7 +164,7 @@ object CreateGraphFactory extends InMemoryGraphFactory {
           }
           _ <- modify[ParsingContext] { context =>
             if (context.variableMapping.get(variable.name).isEmpty) {
-              context.updated(variable.name, node)
+              context.updated(variable.name, node, merge)
             } else {
               context
             }
@@ -168,12 +173,12 @@ object CreateGraphFactory extends InMemoryGraphFactory {
 
       case RelationshipChain(first, RelationshipPattern(Some(variable), relType, None, props, direction, _, _), third) =>
         for {
-          source <- processPatternElement(first)
+          source <- processPatternElement(first, merge)
           sourceId <- pure[ParsingContext, Long](source match {
             case n: CypherNode[Long] => n.id
             case r: CypherRelationship[Long] => r.endId
           })
-          target <- processPatternElement(third)
+          target <- processPatternElement(third, merge)
           properties <- props match {
             case Some(expr: MapExpression) => extractProperties(expr)
             case Some(other) => throw IllegalArgumentException("a RelationshipChain with MapExpression", other)
@@ -206,9 +211,48 @@ object CreateGraphFactory extends InMemoryGraphFactory {
     for {
       res <- expr match {
         case Parameter(name, _) => inspect[ParsingContext, Any](_.parameter(name))
+
         case Variable(name) => inspect[ParsingContext, Any](_.variableMapping(name))
+
         case l: Literal => pure[ParsingContext, Any](l.value)
+
         case ListLiteral(expressions) => expressions.toList.traverse[Result, Any](processExpr)
+
+        case Modulo(lhs, rhs) =>
+          for {
+            leftVal <- processExpr(lhs)
+            rightVal <- processExpr(rhs)
+            res <- pure[ParsingContext, Any](leftVal.asInstanceOf[Long] % rightVal.asInstanceOf[Long])
+          } yield res
+
+        case MapExpression(items) =>
+          for {
+            keys <- pure(items.map { case (k, _) => k.name })
+            valueTypes <- items.toList.traverse[Result, Any] { case (_, v) => processExpr(v) }
+            res <- pure[ParsingContext, Any](keys.zip(valueTypes).toMap)
+          } yield res
+
+        case FunctionInvocation(_, FunctionName("date"), _, Seq(dateString: StringLiteral)) =>
+          pure[ParsingContext, Any](parseDate(Right(dateString.value)))
+
+        case FunctionInvocation(_, FunctionName("date"), _, Seq(map: MapExpression)) =>
+          for {
+            dateMap <- processExpr(map)
+            res <- pure[ParsingContext, Any](parseDate(Left(dateMap.asInstanceOf[Map[String, Long]].mapValues(_.toInt))))
+          } yield res
+
+        case FunctionInvocation(_, FunctionName("localdatetime"), _, Seq(dateString: StringLiteral)) =>
+          pure[ParsingContext, Any](TemporalTypesHelper.parseLocalDateTime(Right(dateString.value)))
+
+        case FunctionInvocation(_, FunctionName("duration"), _, Seq(dateString: StringLiteral)) =>
+          pure[ParsingContext, Any](Duration.parse(dateString.value))
+
+        case FunctionInvocation(_, FunctionName("duration"), _, Seq(map: MapExpression)) =>
+          for {
+            durationMap <- processExpr(map)
+            res <- pure[ParsingContext, Any](Duration(durationMap.asInstanceOf[Map[String, Long]]))
+          } yield res
+
         case Property(variable: Variable, propertyKey) =>
           inspect[ParsingContext, Any]({ context =>
             context.variableMapping(variable.name) match {
@@ -266,16 +310,22 @@ final case class ParsingContext(
 
   def popProtectedScope: ParsingContext = copy(protectedScopes = protectedScopes.tail)
 
-  def updated(k: String, v: Any): ParsingContext = v match {
-    case n: InMemoryTestNode =>
+  def updated(k: String, v: Any, merge: Boolean = false): ParsingContext = v match {
+    case n: InMemoryTestNode if !merge || !containsNode(n) =>
       copy(graph = graph.updated(n), variableMapping = variableMapping.updated(k, n))
 
-    case r: InMemoryTestRelationship =>
+    case r: InMemoryTestRelationship if !merge || !containsRel(r) =>
       copy(graph = graph.updated(r), variableMapping = variableMapping.updated(k, r))
 
     case _ =>
       copy(variableMapping = variableMapping.updated(k, v))
   }
+
+  private def containsNode(n: InMemoryTestNode): Boolean =
+    graph.nodes.exists(n.equalsSemantically)
+
+  private def containsRel(r: InMemoryTestRelationship): Boolean =
+    graph.relationships.exists(r.equalsSemantically)
 }
 
 object ParsingContext {

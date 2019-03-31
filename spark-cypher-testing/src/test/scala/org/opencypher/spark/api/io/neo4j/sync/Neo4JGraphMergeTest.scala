@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,20 +35,20 @@ import org.opencypher.okapi.impl.exception.SchemaException
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
 import org.opencypher.okapi.neo4j.io.Neo4jHelpers.Neo4jDefaults._
 import org.opencypher.okapi.neo4j.io.Neo4jHelpers._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jServerFixture
 import org.opencypher.okapi.relational.api.graph.RelationalCypherGraph
 import org.opencypher.okapi.testing.Bag
 import org.opencypher.spark.api.io.HiveFormat
 import org.opencypher.spark.api.io.neo4j.Neo4jPropertyGraphDataSource
 import org.opencypher.spark.api.io.sql.{SqlDataSourceConfig, SqlPropertyGraphDataSource}
-import org.opencypher.spark.impl.acceptance.DefaultGraphInit
+import org.opencypher.spark.impl.acceptance.ScanGraphInit
 import org.opencypher.spark.impl.table.SparkTable
 import org.opencypher.spark.testing.CAPSTestSuite
-import org.opencypher.spark.testing.fixture.CAPSNeo4jServerFixture
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
-class Neo4JGraphMergeTest extends CAPSTestSuite with CAPSNeo4jServerFixture with DefaultGraphInit {
+class Neo4JGraphMergeTest extends CAPSTestSuite with Neo4jServerFixture with ScanGraphInit {
 
   override def dataFixture: String = ""
 
@@ -63,24 +63,7 @@ class Neo4JGraphMergeTest extends CAPSTestSuite with CAPSNeo4jServerFixture with
     """.stripMargin)
 
   override def afterEach(): Unit = {
-    neo4jConfig.withSession { session =>
-      session.run("MATCH (n) DETACH DELETE n").consume()
-      val constraints = session.run("CALL db.constraints").list().asScala.map(_.get(0).asString)
-      val regexp = """CONSTRAINT ON (.+) ASSERT \(?(.+?)\)? IS NODE KEY""".r
-
-      constraints.map {
-        case regexp(label, keys) => s"DROP CONSTRAINT ON $label ASSERT ($keys) IS NODE KEY"
-        case c => s"DROP $c"
-      }.foreach(session.run(_).consume())
-      session.run("MATCH (n) DETACH DELETE n").consume()
-
-      session
-        .run("CALL db.indexes YIELD description")
-        .list().asScala
-        .map(_.get(0).asString)
-        .map(i => s"DROP $i")
-        .foreach(session.run(_).consume())
-    }
+    neo4jContext.clear()
     super.afterEach()
   }
 
@@ -211,12 +194,8 @@ class Neo4JGraphMergeTest extends CAPSTestSuite with CAPSNeo4jServerFixture with
           |  (Person) FROM ds1.db.persons
           |)
         """.stripMargin
-      val hiveDataSourceConfig = SqlDataSourceConfig(
-        storageFormat = HiveFormat,
-        dataSourceName = "ds1"
-      )
-
-      val pgds = SqlPropertyGraphDataSource(GraphDdl(ddlString), List(hiveDataSourceConfig))
+      val hiveDataSourceConfig = SqlDataSourceConfig.Hive
+      val pgds = SqlPropertyGraphDataSource(GraphDdl(ddlString), Map("ds1" -> hiveDataSourceConfig))
       val graph = pgds.graph(GraphName("personGraph"))
 
       Neo4jGraphMerge.createIndexes(entireGraphName, neo4jConfig, graph.schema.nodeKeys)
@@ -256,12 +235,12 @@ class Neo4JGraphMergeTest extends CAPSTestSuite with CAPSNeo4jServerFixture with
 
       Neo4jGraphMerge.createIndexes(entireGraphName, neo4jConfig, nodeKeys)
 
-      neo4jConfig.cypher("CALL db.constraints YIELD description").toSet should equal(Set(
+      neo4jConfig.cypherWithNewSession("CALL db.constraints YIELD description").toSet should equal(Set(
         Map("description" -> new CypherString("CONSTRAINT ON ( person:Person ) ASSERT (person.name, person.bar) IS NODE KEY")),
         Map("description" -> new CypherString("CONSTRAINT ON ( employee:Employee ) ASSERT employee.baz IS NODE KEY"))
       ))
 
-      neo4jConfig.cypher("CALL db.indexes YIELD description").toSet should equal(Set(
+      neo4jConfig.cypherWithNewSession("CALL db.indexes YIELD description").toSet should equal(Set(
         Map("description" -> new CypherString(s"INDEX ON :Person($metaPropertyKey)")),
         Map("description" -> new CypherString(s"INDEX ON :Person(name, bar)")),
         Map("description" -> new CypherString(s"INDEX ON :Employee($metaPropertyKey)")),
@@ -330,9 +309,9 @@ class Neo4JGraphMergeTest extends CAPSTestSuite with CAPSNeo4jServerFixture with
       val subGraphName = GraphName("myGraph")
       Neo4jGraphMerge.createIndexes(subGraphName, neo4jConfig, nodeKeys)
 
-      neo4jConfig.cypher("CALL db.constraints YIELD description").toSet shouldBe empty
+      neo4jConfig.cypherWithNewSession("CALL db.constraints YIELD description").toSet shouldBe empty
 
-      neo4jConfig.cypher("CALL db.indexes YIELD description").toSet should equal(Set(
+      neo4jConfig.cypherWithNewSession("CALL db.indexes YIELD description").toSet should equal(Set(
         Map("description" -> new CypherString(s"INDEX ON :${subGraphName.metaLabelForSubgraph}($metaPropertyKey)")),
         Map("description" -> new CypherString(s"INDEX ON :Person(name, bar)")),
         Map("description" -> new CypherString(s"INDEX ON :Employee(baz)"))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ package org.opencypher.okapi.impl.table
 
 import org.opencypher.okapi.api.table.CypherRecords
 import org.opencypher.okapi.api.value.CypherValue.CypherValue
+import org.opencypher.okapi.api.value.CypherValue.Format._
 import org.opencypher.okapi.impl.util.{PrintOptions, TablePrinter}
 
 object RecordsPrinter {

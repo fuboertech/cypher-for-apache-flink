@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,14 @@
 package org.opencypher.spark.impl.convert
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.opencypher.okapi.api.types.{CTList, CTMap, CTNode, CTRelationship}
+import org.opencypher.okapi.api.types.{CTList, CTNode, CTRelationship}
 import org.opencypher.okapi.api.value.CypherValue._
 import org.opencypher.okapi.api.value._
 import org.opencypher.okapi.impl.exception.UnsupportedOperationException
 import org.opencypher.okapi.ir.api.expr.{Expr, ListSegment, Var}
 import org.opencypher.okapi.relational.impl.table.RecordHeader
 import org.opencypher.spark.api.value.{CAPSNode, CAPSRelationship}
+import org.opencypher.spark.impl.convert.SparkConversions._
 
 // TODO: argument cannot be a Map due to Scala issue https://issues.scala-lang.org/browse/SI-7005
 final case class rowToCypherMap(exprToColumn: Seq[(Expr, String)]) extends (Row => CypherMap) {
@@ -63,32 +63,15 @@ final case class rowToCypherMap(exprToColumn: Seq[(Expr, String)]) extends (Row 
   }
 
   private def constructFromExpression(row: Row, expr: Expr): CypherValue = {
-    expr.cypherType.material match {
-      case CTMap(inner) =>
-        if (inner.isEmpty) {
-          CypherMap()
-        } else {
-          val innerRow = row.getAs[GenericRowWithSchema](header.column(expr))
-          innerRow match {
-            case _: GenericRowWithSchema =>
-              innerRow.schema.fieldNames.map { field =>
-                field -> CypherValue(innerRow.getAs[Any](field))
-              }.toMap
-            case null => null
-          }
-        }
-
-      case _ =>
-        val raw = row.getAs[Any](header.column(expr))
-        CypherValue(raw)
-    }
+    val raw = row.getAs[Any](header.column(expr))
+    CypherValue(raw)
   }
 
   private def collectNode(row: Row, v: Var): CypherValue = {
     val idValue = row.getAs[Any](header.column(v))
     idValue match {
       case null => CypherNull
-      case id: Long =>
+      case id: Array[_] =>
 
         val labels = header
           .labelsFor(v)
@@ -101,8 +84,8 @@ final case class rowToCypherMap(exprToColumn: Seq[(Expr, String)]) extends (Row 
           .collect { case (key, value) if !value.isNull => key -> value }
           .toMap
 
-        CAPSNode(id, labels, properties)
-      case invalidID => throw UnsupportedOperationException(s"CAPSNode ID has to be a Long instead of ${invalidID.getClass}")
+        CAPSNode(id.asInstanceOf[Array[Byte]], labels, properties)
+      case invalidID => throw UnsupportedOperationException(s"CAPSNode ID has to be a CAPSId instead of ${invalidID.getClass}")
     }
   }
 
@@ -110,9 +93,9 @@ final case class rowToCypherMap(exprToColumn: Seq[(Expr, String)]) extends (Row 
     val idValue = row.getAs[Any](header.column(v))
     idValue match {
       case null => CypherNull
-      case id: Long =>
-        val source = row.getAs[Long](header.column(header.startNodeFor(v)))
-        val target = row.getAs[Long](header.column(header.endNodeFor(v)))
+      case id: Array[_] =>
+        val source = row.getAs[Array[_]](header.column(header.startNodeFor(v)))
+        val target = row.getAs[Array[_]](header.column(header.endNodeFor(v)))
 
         val relType = header
           .typesFor(v)
@@ -126,7 +109,12 @@ final case class rowToCypherMap(exprToColumn: Seq[(Expr, String)]) extends (Row 
           .collect { case (key, value) if !value.isNull => key -> value }
           .toMap
 
-        CAPSRelationship(id, source, target, relType, properties)
+        CAPSRelationship(
+          id.asInstanceOf[Array[Byte]],
+          source.asInstanceOf[Array[Byte]],
+          target.asInstanceOf[Array[Byte]],
+          relType,
+          properties)
       case invalidID => throw UnsupportedOperationException(s"CAPSRelationship ID has to be a Long instead of ${invalidID.getClass}")
     }
   }

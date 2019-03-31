@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ import java.util.Collections
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
-import org.opencypher.okapi.api.types.CTInteger
+import org.opencypher.okapi.api.types.{CTAny, CTIdentity, CTInteger}
 import org.opencypher.okapi.api.value.CypherValue.CypherMap
 import org.opencypher.okapi.ir.api.expr._
-import org.opencypher.okapi.relational.api.tagging.Tags._
 import org.opencypher.okapi.relational.impl.table.RecordHeader
 import org.opencypher.okapi.testing.BaseTestSuite
+import org.opencypher.spark.api.value.CAPSEntity._
 import org.opencypher.spark.impl.ExprEval._
 import org.opencypher.spark.impl.SparkSQLExprMapper._
 import org.opencypher.spark.testing.fixture.SparkSessionFixture
@@ -45,30 +45,34 @@ import scala.language.implicitConversions
 
 class SparkSQLExprMapperTest extends BaseTestSuite with SparkSessionFixture {
 
-  val vA: Var = Var("a")()
-  val vB: Var = Var("b")()
+  val vA: Var = Var("a")(CTInteger)
+  val vB: Var = Var("b")(CTInteger)
   val header: RecordHeader = RecordHeader.from(vA, vB)
 
-  it("can map subtract") {
-    val expr = Subtract(Var("a")(), Var("b")())()
-    convert(expr, header.withExpr(expr).withAlias(expr as Var("foo")())) should equal(
-      df.col(header.column(vA)) - df.col(header.column(vB))
-    )
+  it("converts prefix id expressions") {
+    val id = 257L
+    val prefix = 2.toByte
+    val expr = PrefixId(ToId(IntegerLit(id))(), prefix)(CTIdentity)
+    expr.eval.asInstanceOf[Array[_]].toList should equal(prefix :: id.encodeAsCAPSId.toList)
   }
 
-  it("converts replaceTag expressions") {
-    IntegerLit(0)(CTInteger)
-      .replaceTag(0, 1)
-      .getTag
-      .eval should equal(1)
+  it("converts a CypherInteger to an ID") {
+    val id = 257L
+    val expr = ToId(IntegerLit(id))()
+    expr.eval.asInstanceOf[Array[_]].toList should equal(id.encodeAsCAPSId.toList)
   }
 
-  it("converts replaceTags expression") {
-    IntegerLit(0)(CTInteger)
-      .setTag(1)
-      .replaceTags(Map(0 -> 1, 1 -> 2))
-      .getTag
-      .eval should equal(2)
+  it("converts a CypherInteger to an ID and prefixes it") {
+    val id = 257L
+    val prefix = 2.toByte
+    val expr = PrefixId(ToId(IntegerLit(id))(), prefix)(CTIdentity)
+    expr.eval.asInstanceOf[Array[_]].toList should equal(prefix :: id.encodeAsCAPSId.toList)
+  }
+
+  it("converts a CypherInteger literal") {
+    val id = 257L
+    val expr = IntegerLit(id)
+    expr.eval.asInstanceOf[Long] should equal(id)
   }
 
   private def convert(expr: Expr, header: RecordHeader = header): Column = {

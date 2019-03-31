@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,9 @@
  */
 package org.opencypher.spark.impl.physical
 
+import org.opencypher.okapi.api.graph.Pattern
 import org.opencypher.okapi.api.schema.Schema
-import org.opencypher.okapi.api.types.{CTString, CypherType}
+import org.opencypher.okapi.api.types.CTString
 import org.opencypher.okapi.impl.exception.SchemaException
 import org.opencypher.okapi.relational.api.graph.RelationalCypherGraph
 import org.opencypher.okapi.relational.impl.operators.{RelationalOperator, Start}
@@ -58,18 +59,13 @@ class RecordHeaderMismatch extends CAPSTestSuite {
 
       override implicit def session: CAPSSession = caps
 
-      override def tags: Set[Int] = Set(0)
-
       override def cache(): RelationalCypherGraph[DataFrameTable] = this
 
       override def tables: Seq[DataFrameTable] = Seq.empty
 
       // Always return empty records, which does not match what the schema promises
-      def scanOperator(
-        entityType: CypherType,
-        exactLabelMatch: Boolean
-      ): RelationalOperator[DataFrameTable] = {
-        Start(caps.records.empty())
+      def scanOperator(searchPattern: Pattern, exactLabelMatch: Boolean): RelationalOperator[DataFrameTable] = {
+        Start.fromEmptyGraph(caps.records.empty())
       }
     }
 

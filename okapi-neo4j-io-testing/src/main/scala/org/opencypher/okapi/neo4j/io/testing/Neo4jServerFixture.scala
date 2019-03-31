@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,37 +26,28 @@
  */
 package org.opencypher.okapi.neo4j.io.testing
 
-import org.neo4j.harness.{EnterpriseTestServerBuilders, ServerControls}
 import org.opencypher.okapi.neo4j.io.Neo4jConfig
+import org.opencypher.okapi.neo4j.io.testing.Neo4jTestUtils.Neo4jContext
 import org.opencypher.okapi.testing.{BaseTestFixture, BaseTestSuite}
 
 trait Neo4jServerFixture extends BaseTestFixture {
   self: BaseTestSuite =>
 
-  var neo4jServer: ServerControls = _
-
-  def neo4jConfig =
-    Neo4jConfig(neo4jServer.boltURI(), user = "anonymous", password = Some("password"), encrypted = false)
-
-  def neo4jHost: String = {
-    val scheme = neo4jServer.boltURI().getScheme
-    val userInfo = s"${neo4jConfig.user}:${neo4jConfig.password.get}@"
-    val host = neo4jServer.boltURI().getAuthority
-    s"$scheme://$userInfo$host"
-  }
-
   def dataFixture: String
+
+  def neo4jHost: String = "bolt://localhost:7687"
+
+  var neo4jContext: Neo4jContext = _
+
+  def neo4jConfig: Neo4jConfig = neo4jContext.config
 
   abstract override def beforeAll(): Unit = {
     super.beforeAll()
-    neo4jServer = EnterpriseTestServerBuilders
-      .newInProcessBuilder()
-      .withFixture(dataFixture)
-      .newServer()
+    neo4jContext = Neo4jTestUtils.connectNeo4j(dataFixture, neo4jHost)
   }
 
   abstract override def afterAll(): Unit = {
-    neo4jServer.close()
+    neo4jContext.close()
     super.afterAll()
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import org.opencypher.okapi.testing.Bag._
 import org.opencypher.spark.impl.table.SparkTable
 import org.opencypher.spark.testing.CAPSTestSuite
 
-class QualifiedGraphNameAcceptance extends CAPSTestSuite with DefaultGraphInit {
+class QualifiedGraphNameAcceptance extends CAPSTestSuite with ScanGraphInit {
 
   val defaultGraph: RelationalCypherGraph[SparkTable.DataFrameTable] = initGraph("CREATE (:A)-[:REL]->(:B)")
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,10 @@ package org.opencypher.okapi.logical.impl
 
 sealed trait Direction
 
-case object Directed extends Direction
-
 case object Undirected extends Direction
+
+sealed trait Directed extends Direction
+
+case object Outgoing extends Directed
+
+case object Incoming extends Directed

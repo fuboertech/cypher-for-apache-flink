@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
  */
 package org.opencypher.spark.testing.fixture
 
+import org.opencypher.okapi.api.graph.Pattern
 import org.opencypher.okapi.relational.api.graph.RelationalCypherGraph
 import org.opencypher.okapi.testing.BaseTestSuite
 import org.opencypher.okapi.testing.propertygraph.CreateGraphFactory
@@ -38,7 +39,6 @@ trait GraphConstructionFixture {
 
   def capsGraphFactory: CAPSTestGraphFactory = CAPSScanGraphFactory
 
-  val initGraph: String => RelationalCypherGraph[DataFrameTable] =
-    createQuery => CAPSScanGraphFactory(CreateGraphFactory(createQuery)).asCaps
-
+  def initGraph(query: String, additionalPatterns: Seq[Pattern] = Seq.empty): RelationalCypherGraph[DataFrameTable] =
+    CAPSScanGraphFactory(CreateGraphFactory(query), additionalPatterns).asCaps
 }

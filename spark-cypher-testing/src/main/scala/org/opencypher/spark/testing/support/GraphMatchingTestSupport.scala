@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,13 +39,13 @@ trait GraphMatchingTestSupport {
 
   self: BaseTestSuite with SparkSessionFixture with CAPSSessionFixture =>
 
-  private def getEntityIds(records: RelationalCypherRecords[DataFrameTable]): Set[Long] = {
+  private def getEntityIds(records: RelationalCypherRecords[DataFrameTable]): Set[List[Byte]] = {
     val entityVar = records.header.vars.toSeq match {
       case Seq(v) => v
       case other => throw new UnsupportedOperationException(s"Expected records with 1 entity, got $other")
     }
 
-    records.table.df.select(records.header.column(entityVar)).collect().map(_.getLong(0)).toSet
+    records.table.df.select(records.header.column(entityVar)).collect().map(_.getAs[Array[Byte]](0).toList).toSet
   }
 
   private def verify(actual: RelationalCypherGraph[DataFrameTable], expected: RelationalCypherGraph[DataFrameTable]): Assertion = {

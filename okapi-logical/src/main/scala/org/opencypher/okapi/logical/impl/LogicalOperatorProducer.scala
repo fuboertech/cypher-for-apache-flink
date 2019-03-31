@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@
  */
 package org.opencypher.okapi.logical.impl
 
+import org.opencypher.okapi.api.graph.NodePattern
 import org.opencypher.okapi.api.types.{CTBoolean, CTNode, CTRelationship}
+import org.opencypher.okapi.impl.types.CypherTypeUtils._
 import org.opencypher.okapi.ir.api.block.{Aggregations, SortItem}
 import org.opencypher.okapi.ir.api.expr._
 import org.opencypher.okapi.ir.api.{IRField, Label}
@@ -81,13 +83,17 @@ class LogicalOperatorProducer {
     ExpandInto(source, rel, target, direction, sourcePlan, sourcePlan.solved.solveRelationship(rel))
   }
 
-  def planNodeScan(node: IRField, prev: LogicalOperator): NodeScan = {
+  def planNodeScan(node: IRField, prev: LogicalOperator): PatternScan = {
     val solvedWithField = prev.solved.withField(node)
+
+    val nodeType = node.cypherType.toCTNode
+
     val solvedWithPredicates = node.cypherType match {
-      case CTNode(labels, _) => solvedWithField.withPredicates(labels.map(l => HasLabel(node, Label(l))(CTBoolean)).toSeq:_*)
+      case CTNode(labels, _) => solvedWithField.withPredicates(labels.map(l => HasLabel(node, Label(l))).toSeq:_*)
       case _ => solvedWithField
     }
-    NodeScan(node, prev, solvedWithPredicates)
+    val pattern = NodePattern(nodeType)
+    PatternScan(pattern, Map(node.toVar -> pattern.nodeEntity), prev, solvedWithPredicates)
   }
 
   def planFilter(expr: Expr, prev: LogicalOperator): Filter = {
@@ -117,10 +123,6 @@ class LogicalOperatorProducer {
 
   def projectField(expr: Expr, field: IRField, prev: LogicalOperator): Project = {
     Project(expr -> Some(field), prev, prev.solved.withField(field))
-  }
-
-  def projectExpr(expr: Expr, prev: LogicalOperator): Project = {
-    Project(expr -> None, prev, prev.solved)
   }
 
   def planUnwind(list: Expr, variable: IRField, withList: LogicalOperator): Unwind = {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,10 @@
  */
 package org.opencypher.okapi.ir.api.pattern
 
+import org.opencypher.okapi.api.types.{CTAny, CTRelationship}
 import org.opencypher.okapi.ir.api.IRField
 import org.opencypher.okapi.testing.BaseTestSuite
+import org.opencypher.v9_0.expressions.SemanticDirection.OUTGOING
 
 class ConnectionTest extends BaseTestSuite {
 
@@ -35,19 +37,13 @@ class ConnectionTest extends BaseTestSuite {
   val field_b: IRField = IRField("b")()
   val field_c: IRField = IRField("c")()
 
-  test("SimpleConnection.flip") {
-    DirectedRelationship(field_a, field_b).flip should equal(DirectedRelationship(field_b, field_a))
-    DirectedRelationship(field_a, field_a).flip should equal(DirectedRelationship(field_a, field_a))
-  }
+  val relType = CTRelationship("FOO")
 
   test("SimpleConnection.equals") {
     DirectedRelationship(field_a, field_b) shouldNot equal(DirectedRelationship(field_b, field_a))
     DirectedRelationship(field_a, field_a) should equal(DirectedRelationship(field_a, field_a))
+    DirectedRelationship(field_a, field_a, OUTGOING) should equal(DirectedRelationship(field_a, field_a, OUTGOING))
     DirectedRelationship(field_a, field_a) shouldNot equal(DirectedRelationship(field_a, field_b))
-  }
-
-  test("UndirectedConnection.flip") {
-    UndirectedRelationship(field_a, field_b).flip should equal(UndirectedRelationship(field_b, field_a))
   }
 
   test("UndirectedConnection.equals") {

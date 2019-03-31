@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,20 +37,6 @@ class TypeTrackerTest extends BaseTestSuite with AstConstructionTestSupport {
     val tracker = TypeTracker.empty.updated(True()(pos), CTString)
 
     tracker.get(True()(pos)) shouldBe Some(CTString)
-  }
-
-  test("push scope and lookup") {
-    val tracker = TypeTracker.empty.updated(True()(pos), CTString).pushScope()
-
-    tracker.get(True()(pos)) shouldBe Some(CTString)
-  }
-
-  test("pushing and popping scope") {
-    val tracker1 = TypeTracker.empty.updated(True()(pos), CTString)
-
-    val tracker2 = tracker1.pushScope().updated(False()(pos), CTBoolean).popScope()
-
-    tracker1 should equal(tracker2.get)
   }
 
 }

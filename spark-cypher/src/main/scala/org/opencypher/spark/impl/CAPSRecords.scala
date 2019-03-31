@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,14 +35,13 @@ import org.opencypher.okapi.relational.api.io.EntityTable
 import org.opencypher.okapi.relational.api.table.{RelationalCypherRecords, RelationalCypherRecordsFactory}
 import org.opencypher.okapi.relational.impl.table._
 import org.opencypher.spark.api.CAPSSession
-import org.opencypher.spark.impl.DataFrameOps._
 import org.opencypher.spark.impl.convert.SparkConversions._
 import org.opencypher.spark.impl.convert.rowToCypherMap
 import org.opencypher.spark.impl.table.SparkTable._
 
 import scala.collection.JavaConverters._
 
-case class CAPSRecordsFactory(implicit caps: CAPSSession) extends RelationalCypherRecordsFactory[DataFrameTable] {
+case class CAPSRecordsFactory()(implicit caps: CAPSSession) extends RelationalCypherRecordsFactory[DataFrameTable] {
 
   override type Records = CAPSRecords
 
@@ -88,7 +87,6 @@ case class CAPSRecordsFactory(implicit caps: CAPSSession) extends RelationalCyph
 
   private case class EmptyRow()
 }
-
 
 case class CAPSRecords(
   header: RecordHeader,

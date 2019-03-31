@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,20 +27,19 @@
 // tag::full-example[]
 package org.opencypher.spark.examples
 
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.opencypher.okapi.api.io.conversion.{NodeMapping, RelationshipMapping}
-import org.opencypher.spark.api.CAPSSession
-import org.opencypher.spark.api.io.{CAPSNodeTable, CAPSRelationshipTable}
-import org.opencypher.spark.util.ConsoleApp
+import java.sql.Date
 
-import scala.collection.JavaConverters._
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.opencypher.okapi.api.io.conversion.{NodeMappingBuilder, RelationshipMappingBuilder}
+import org.opencypher.spark.api.CAPSSession
+import org.opencypher.spark.api.io.CAPSEntityTable
+import org.opencypher.spark.util.App
 
 /**
   * Demonstrates basic usage of the CAPS API by loading an example network from existing [[DataFrame]]s including
   * custom entity mappings and running a Cypher query on it.
   */
-object CustomDataFrameInputExample extends ConsoleApp {
+object CustomDataFrameInputExample extends App {
 
   // 1) Create CAPS session and retrieve Spark session
   // tag::create-session[]
@@ -54,33 +53,17 @@ object CustomDataFrameInputExample extends ConsoleApp {
 
   // 2) Generate some DataFrames that we'd like to interpret as a property graph.
   // tag::prepare-dataframes[]
-  val nodesDF: DataFrame = {
-    val nodes = List(
-      Row(0L, "Alice", 42L),
-      Row(1L, "Bob", 23L),
-      Row(2L, "Eve", 84L)
-    ).asJava
-    val nodeSchema = StructType(List(
-      StructField("NODE_ID", LongType, false),
-      StructField("FIRST_NAME", StringType, false),
-      StructField("AGE", LongType, false))
-    )
-    spark.createDataFrame(nodes, nodeSchema)
-  }
+  val nodeData: DataFrame = spark.createDataFrame(Seq(
+    ("Alice", 42L),
+    ("Bob", 23L),
+    ("Eve", 84L)
+  )).toDF("FIRST_NAME", "AGE")
+  val nodesDF = nodeData.withColumn("ID", nodeData.col("FIRST_NAME"))
 
-  val relsDF: DataFrame = {
-    val rels = List(
-      Row(0L, 0L, 1L, "23/01/1987"),
-      Row(1L, 1L, 2L, "12/12/2009")
-    ).asJava
-    val relSchema = StructType(List(
-      StructField("REL_ID", LongType, false),
-      StructField("SOURCE_ID", LongType, false),
-      StructField("TARGET_ID", LongType, false),
-      StructField("CONNECTED_SINCE", StringType, false))
-    )
-    spark.createDataFrame(rels, relSchema)
-  }
+  val relsDF: DataFrame = spark.createDataFrame(Seq(
+    (0L, "Alice", "Bob", Date.valueOf("1987-01-23")),
+    (1L, "Bob", "Eve", Date.valueOf("2009-12-12"))
+  )).toDF("REL_ID", "SOURCE_ID", "TARGET_ID", "CONNECTED_SINCE")
   // end::prepare-dataframes[]
 
   // 3) Generate node- and relationship tables that wrap the DataFrames and describe their contained data.
@@ -88,21 +71,24 @@ object CustomDataFrameInputExample extends ConsoleApp {
   //    component (identifiers, properties, optional labels, relationship types).
 
   // tag::create-node-relationship-tables[]
-  val personNodeMapping = NodeMapping
-    .withSourceIdKey("NODE_ID")
+
+  val personNodeMapping = NodeMappingBuilder
+    .withSourceIdKey("ID")
     .withImpliedLabel("Person")
     .withPropertyKey(propertyKey = "name", sourcePropertyKey = "FIRST_NAME")
     .withPropertyKey(propertyKey = "age", sourcePropertyKey = "AGE")
+    .build
 
-  val friendOfMapping = RelationshipMapping
+  val friendOfMapping = RelationshipMappingBuilder
     .withSourceIdKey("REL_ID")
     .withSourceStartNodeKey("SOURCE_ID")
     .withSourceEndNodeKey("TARGET_ID")
     .withRelType("FRIEND_OF")
     .withPropertyKey("since", "CONNECTED_SINCE")
+    .build
 
-  val personTable = CAPSNodeTable.fromMapping(personNodeMapping, nodesDF)
-  val friendsTable = CAPSRelationshipTable.fromMapping(friendOfMapping, relsDF)
+  val personTable = CAPSEntityTable.create(personNodeMapping, nodesDF)
+  val friendsTable = CAPSEntityTable.create(friendOfMapping, relsDF)
   // end::create-node-relationship-tables[]
 
   // 4) Create property graph from graph scans
@@ -128,32 +114,5 @@ object CustomDataFrameInputExample extends ConsoleApp {
 
   println(safeNames)
 
-  def nodes: DataFrame = {
-    val nodes = List(
-      Row(0L, "Alice", 42L),
-      Row(1L, "Bob", 23L),
-      Row(2L, "Eve", 84L)
-    ).asJava
-    val nodeSchema = StructType(List(
-      StructField("NODE_ID", LongType, false),
-      StructField("FIRST_NAME", StringType, false),
-      StructField("AGE", LongType, false))
-    )
-    spark.createDataFrame(nodes, nodeSchema)
-  }
-
-  def rels: DataFrame = {
-    val rels = List(
-      Row(0L, 0L, 1L, "23/01/1987"),
-      Row(1L, 1L, 2L, "12/12/2009")
-    ).asJava
-    val relSchema = StructType(List(
-      StructField("REL_ID", LongType, false),
-      StructField("SOURCE_ID", LongType, false),
-      StructField("TARGET_ID", LongType, false),
-      StructField("CONNECTED_SINCE", StringType, false))
-    )
-    spark.createDataFrame(rels, relSchema)
-  }
 }
 // end::full-example[]

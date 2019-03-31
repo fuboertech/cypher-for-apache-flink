@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,11 @@ import scala.util.Properties
 
 object NorthwindDB {
 
-  def init(sqlDataSourceConfig: SqlDataSourceConfig): Unit = {
+  def init(sqlDataSourceConfig: SqlDataSourceConfig.Jdbc): Unit = {
 
     withConnection(sqlDataSourceConfig) { connection =>
-
+      connection.execute("DROP SCHEMA IF EXISTS NORTHWIND")
+      connection.execute("CREATE SCHEMA NORTHWIND")
       connection.setSchema("NORTHWIND")
 
       // create the SQL db schema

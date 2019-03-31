@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ object CAPSGraphTestData {
 
   val `:Person`: String =
     """
-      |CREATE (p1:Person:Swedish {name: "Mats", luckyNumber: 23})
+      |CREATE (p1:Person {name: "Mats", luckyNumber: 23})
       |CREATE (p2:Person {name: "Martin", luckyNumber: 42})
       |CREATE (p3:Person {name: "Max", luckyNumber: 1337})
       |CREATE (p4:Person {name: "Stefan", luckyNumber: 9})

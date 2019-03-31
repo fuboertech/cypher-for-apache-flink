@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,23 +44,18 @@ object RecordHeader {
 
   def from[T <: Expr](exprs: Seq[T]): RecordHeader = from(exprs.head, exprs.tail: _*)
 
-  def from(relType: CTRelationship): RecordHeader = {
-    val v = RelationshipVar("")(relType)
-
-    from(
+  def from(v: Var): RecordHeader = v.cypherType match {
+    case n: CTNode =>
+      from(
+        v,
+        n.labels.map(l => HasLabel(v, Label(l))).toSeq: _*
+      )
+    case r: CTRelationship => from(
       v,
-      Seq(StartNode(v)(CTInteger), EndNode(v)(CTInteger))
-      ++ relType.types.map(t => HasType(v, RelType(t))(CTBoolean)): _*
+      Seq(StartNode(v)(CTIdentity), EndNode(v)(CTIdentity))
+        ++ r.types.map(t => HasType(v, RelType(t))): _*
     )
-  }
-
-  def from(nodeType: CTNode): RecordHeader = {
-    val v = NodeVar("")(nodeType)
-
-    from(
-      v,
-      nodeType.labels.map(l => HasLabel(v, Label(l))(CTBoolean)).toSeq: _*
-    )
+    case other => throw IllegalArgumentException("A node or relationship variable", other)
   }
 }
 
@@ -135,8 +130,8 @@ case class RecordHeader(exprToColumn: Map[Expr, String]) {
 
   def idExpressions(): Set[Expr] = {
     exprToColumn.keySet.collect {
-      case n if n.cypherType.subTypeOf(CTNode).isTrue => n
-      case r if r.cypherType.subTypeOf(CTRelationship).isTrue => r
+      case n if n.cypherType.subTypeOf(CTNode) => n
+      case r if r.cypherType.subTypeOf(CTRelationship) => r
     }
   }
 
@@ -194,7 +189,7 @@ case class RecordHeader(exprToColumn: Map[Expr, String]) {
 
   def nodeEntities: Set[Var] = {
     exprToColumn.keySet.collect {
-      case v: Var if v.cypherType.subTypeOf(CTNode).isTrue => v
+      case v: Var if v.cypherType.subTypeOf(CTNode) => v
     }
   }
 
@@ -206,7 +201,7 @@ case class RecordHeader(exprToColumn: Map[Expr, String]) {
 
   def relationshipEntities: Set[Var] = {
     exprToColumn.keySet.collect {
-      case v: Var if v.cypherType.subTypeOf(CTRelationship).isTrue => v
+      case v: Var if v.cypherType.subTypeOf(CTRelationship) => v
     }
   }
 
@@ -276,7 +271,11 @@ case class RecordHeader(exprToColumn: Map[Expr, String]) {
     RecordHeader(selectMappings)
   }
 
-  def withColumnsRenamed[T <: Expr](renamings: Map[T, String]): RecordHeader = {
+  def withColumnsReplaced[T <: Expr](replacements: Map[T, String]): RecordHeader = {
+    RecordHeader(exprToColumn ++ replacements)
+  }
+
+  def withColumnsRenamed[T <: Expr](renamings: Seq[(T, String)]): RecordHeader = {
     renamings.foldLeft(this) {
       case (currentHeader, (expr, newColumn)) => currentHeader.withColumnRenamed(expr, newColumn)
     }
@@ -391,15 +390,24 @@ case class RecordHeader(exprToColumn: Map[Expr, String]) {
   }
 
   def ++(other: RecordHeader): RecordHeader = {
-    val joined = exprToColumn ++ other.exprToColumn
-    val withJoinedCypherTypes: Map[Expr, String] = joined.map {
+    val result = (exprToColumn ++ other.exprToColumn).map {
       case (key, value) =>
         val leftCT = exprToColumn.keySet.find(_ == key).map(_.cypherType).getOrElse(CTVoid)
         val rightCT = other.exprToColumn.keySet.find(_ == key).map(_.cypherType).getOrElse(CTVoid)
-        key.withCypherType(leftCT join rightCT) -> value
-    }
 
-    copy(exprToColumn = withJoinedCypherTypes)
+        val resultExpr = (key, leftCT, rightCT) match {
+          case (v: Var, l: CTNode, r: CTNode) => Var(v.name)(l.join(r))
+          case (v: Var, l: CTRelationship, r: CTRelationship) => Var(v.name)(l.join(r))
+          case (_, l, r) if l.subTypeOf(r) => other.exprToColumn.keySet.collectFirst { case k if k == key => k }.get
+          case (_, l, r) if r.subTypeOf(l) => key
+          case _ => throw IllegalArgumentException(
+            expected = s"Compatible Cypher types for expression $key",
+            actual = s"left type `$leftCT` and right type `$rightCT`"
+          )
+        }
+        resultExpr -> value
+    }
+    copy(exprToColumn = result)
   }
 
   def --[T <: Expr](expressions: Set[T]): RecordHeader = {
@@ -409,7 +417,8 @@ case class RecordHeader(exprToColumn: Map[Expr, String]) {
   }
 
   def addExprToColumn(expr: Expr, columnName: String): RecordHeader = {
-    copy(exprToColumn = exprToColumn + (expr -> columnName))
+    // We need to possibly remove the existing expression in order to update the CypherType
+    copy(exprToColumn = exprToColumn - expr + (expr -> columnName))
   }
 
   override def toString: String = exprToColumn.keys

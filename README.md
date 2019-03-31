@@ -1,4 +1,4 @@
-[![Maven Central](https://img.shields.io/badge/Maven_Central-0.2.3-blue.svg?label=Maven%20Central)](https://search.maven.org/#artifactdetails%7Corg.opencypher%7Cspark-cypher%7C0.2.3%7Cjar)
+[![Maven Central](https://img.shields.io/badge/Maven_Central-0.3.1-blue.svg?label=Maven%20Central)](https://search.maven.org/#artifactdetails%7Corg.opencypher%7Cspark-cypher%7C0.3.1%7Cjar)
 # CAPS: Cypher for Apache Spark
 
 CAPS extends [Apache Spark™](https://spark.apache.org) with [Cypher](https://neo4j.com/docs/developer-manual/current/cypher/), the industry's most widely used [property graph](https://github.com/opencypher/openCypher/blob/master/docs/property-graph-model.adoc) query language defined and maintained by the [openCypher](http://www.opencypher.org) project.
@@ -21,21 +21,21 @@ integration with GraphX. To learn more about this, please see our [examples](htt
 ## Current status: Pre-release
 
 The functionality and APIs are stabilizing but surface changes (e.g. to the Cypher syntax and semantics for multiple graph processing and graph projections/construction) are still likely to occur. 
-We invite you to try out the project, and we welcome feedback and contributions 
+We invite you to try out the project, and we welcome feedback and contributions.
 
-A 1.0 release of the project with a stable feature set and API/language surface is targeted for Q4 of 2018. 
-
-We expect continuing development of the project after 1.0. 
 If you are interested in contributing to the project we would love to hear from you; email us at `opencypher@neo4j.org` or just raise a PR. 
 Please note that this is an openCypher project and contributions can only be accepted if you’ve agreed to the  [openCypher Contributors Agreement (oCCA)](CONTRIBUTING.adoc).
 
+## Documentation
+
+A preview of the documentation for Morpheus, which is a commercially supported version of CAPS, is [available from Neo4j](https://neo4j.com/docs/morpheus-user-guide/1.0-preview/).
 
 ## CAPS Features
 
 CAPS is built on top of the Spark DataFrame API and uses features such as the Catalyst optimizer.
 The Spark representations are accessible and can be converted to representations that integrate with other Spark libraries.
 
-CAPS supports a subset of Cypher <!-- TODO: WIKI supported features --> and is the first implementation of [multiple graphs](https://github.com/boggle/openCypher/blob/CIP2017-06-18-multiple-graphs/cip/1.accepted/CIP2017-06-18-multiple-graphs.adoc) and graph query compositionality.
+CAPS supports [a subset of Cypher](https://github.com/opencypher/cypher-for-apache-spark/blob/master/documentation/asciidoc/cypher-cypher9-features.adoc) and is the first implementation of [multiple graphs](https://github.com/boggle/openCypher/blob/CIP2017-06-18-multiple-graphs/cip/1.accepted/CIP2017-06-18-multiple-graphs.adoc) and graph query compositionality.
 
 CAPS currently supports importing graphs from both Neo4j and from custom [CSV format](https://github.com/opencypher/cypher-for-apache-spark/tree/master/caps-core/src/test/resources/csv/sn) in HDFS and local file system.
 CAPS has a data source API that allows you to plug in custom data importers for external graphs.
@@ -48,27 +48,28 @@ CAPS is under rapid development and we are planning to offer support for:
 - integration with Spark SQL
 - injection of custom graph data sources
 
-## Spark Improvement Proposal
+## Spark Project Improvement Proposal
 
 Currently CAPS is a third-party add-on to the Spark ecosystem. We, however, believe that property graphs and graph processing
 has the potential to be come a vital part of data analytics. We are thus working, in cooperation with 
 *Databricks*, on making CAPS a core part of Spark. 
 The first step on this road is the specification of a __PropertyGraph API__, similar to __SQL__ and __Dataframes__, along with porting
 Cypher 9 features of CAPS to the core Spark project in a so called __Spark Project Improvement Proposal__ (SPIP).
-We are currently in the first phase of this process. The SPIP describing the motivation and goals is published here
+
+We are currently in the second phase of this process, after having successfully [passed the vote for inclusion](http://apache-spark-developers-list.1001551.n3.nabble.com/VOTE-RESULT-SPIP-DataFrame-based-Property-Graphs-Cypher-Queries-and-Algorithms-td26401.html) into Apache Spark 3.0.
+The SPIP describing the motivation and goals is published here
 [SPARK-25994](https://issues.apache.org/jira/browse/SPARK-25994). 
-Additionally [SPARK-26028](https://issues.apache.org/jira/browse/SPARK-26028) proposes an API design and 
-implementation strategies. 
+Additionally [SPARK-26028](https://issues.apache.org/jira/browse/SPARK-26028) proposes an API design and implementation strategies. 
 
 ## Get started with CAPS
 CAPS is currently easiest to use with Scala. Below we explain how you can import a simple graph and run a Cypher query on it.
 
 ### Building CAPS
 
-CAPS is built using Maven
+CAPS is built using Gradle
 
 ```
-mvn clean install
+./gradlew build
 ```
 
 
@@ -81,26 +82,18 @@ Maven:
 <dependency>
   <groupId>org.opencypher</groupId>
   <artifactId>spark-cypher</artifactId>
-  <version>0.2.3</version>
+  <version>0.3.1</version>
 </dependency>
 ```
 
 sbt:
 ```
-libraryDependencies += "org.opencypher" % "spark-cypher" % "0.2.3"
+libraryDependencies += "org.opencypher" % "spark-cypher" % "0.3.1"
 ```
 
 Remember to add `fork in run := true` in your `build.sbt` for scala projects; this is not CAPS
 specific, but a quirk of spark execution that will help 
 [prevent problems](https://stackoverflow.com/questions/44298847/why-do-we-need-to-add-fork-in-run-true-when-running-spark-sbt-application).
-
-### Generating API documentation
-
-```
-mvn scala:doc
-```
-
-Documentation will be generated and placed under `[MODULE_DIRECTORY]/target/site/scaladocs/index.html`
 
 ### Hello CAPS
 
@@ -114,64 +107,65 @@ If you have existing data frames which you would like to treat as a graph, have 
 Once the property graph is constructed, it supports Cypher queries via its `cypher` method.
 
 ```scala
+import org.apache.spark.sql.DataFrame
 import org.opencypher.spark.api.CAPSSession
-import org.opencypher.spark.api.io.{Node, Relationship, RelationshipType}
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.api.io.{CAPSNodeTable, CAPSRelationshipTable}
 
 /**
-  * Demonstrates basic usage of the CAPS API by loading an example network via Scala case classes and running a Cypher
-  * query on it.
+  * Demonstrates basic usage of the CAPS API by loading an example graph from [[DataFrame]]s.
   */
-object CaseClassExample extends ConsoleApp {
-
-  // 1) Create CAPS session
+object DataFrameInputExample extends App {
+  // 1) Create CAPS session and retrieve Spark session
   implicit val session: CAPSSession = CAPSSession.local()
+  val spark = session.sparkSession
 
-  // 2) Load social network data via case class instances
-  val socialNetwork = session.readFrom(SocialNetworkData.persons, SocialNetworkData.friendships)
+  import spark.sqlContext.implicits._
 
-  // 3) Query graph with Cypher
-  val results = socialNetwork.cypher(
-    """|MATCH (a:Person)-[r:FRIEND_OF]->(b)
-       |RETURN a.name, b.name, r.since
-       |ORDER BY a.name""".stripMargin
-  )
+  // 2) Generate some DataFrames that we'd like to interpret as a property graph.
+  val nodesDF = spark.createDataset(Seq(
+    (0L, "Alice", 42L),
+    (1L, "Bob", 23L),
+    (2L, "Eve", 84L)
+  )).toDF("id", "name", "age")
+  val relsDF = spark.createDataset(Seq(
+    (0L, 0L, 1L, "23/01/1987"),
+    (1L, 1L, 2L, "12/12/2009")
+  )).toDF("id", "source", "target", "since")
 
-  // 4) Print result to console
-  results.show
-}
+  // 3) Generate node- and relationship tables that wrap the DataFrames. The mapping between graph entities and columns
+  //    is derived using naming conventions for identifier columns.
+  val personTable = CAPSNodeTable(Set("Person"), nodesDF)
+  val friendsTable = CAPSRelationshipTable("KNOWS", relsDF)
 
-/**
-  * Specify schema and data with case classes.
-  */
-object SocialNetworkData {
+  // 4) Create property graph from graph scans
+  val graph = session.readFrom(personTable, friendsTable)
 
-  case class Person(id: Long, name: String, age: Int) extends Node
+  // 5) Execute Cypher query and print results
+  val result = graph.cypher("MATCH (n:Person) RETURN n.name")
 
-  @RelationshipType("FRIEND_OF")
-  case class Friend(id: Long, source: Long, target: Long, since: String) extends Relationship
+  // 6) Collect results into string by selecting a specific column.
+  //    This operation may be very expensive as it materializes results locally.
+  val names: Set[String] = result.records.table.df.collect().map(_.getAs[String]("n_name")).toSet
 
-  val alice = Person(0, "Alice", 10)
-  val bob = Person(1, "Bob", 20)
-  val carol = Person(2, "Carol", 15)
-
-  val persons = List(alice, bob, carol)
-  val friendships = List(Friend(0, alice.id, bob.id, "23/01/1987"), Friend(1, bob.id, carol.id, "12/12/2009"))
+  println(names)
 }
 ```
 
 The above program prints:
 ```
-╔═════════╤═════════╤══════════════╗
-║ a.name  │ b.name  │ r.since      ║
-╠═════════╪═════════╪══════════════╣
-║ 'Alice' │ 'Bob'   │ '23/01/1987' ║
-║ 'Bob'   │ 'Carol' │ '12/12/2009' ║
-╚═════════╧═════════╧══════════════╝
-(2 rows)
+Set(Alice, Bob, Eve)
 ```
 
 More examples, including [multiple graph features](spark-cypher-examples/src/main/scala/org/opencypher/spark/examples/MultipleGraphExample.scala), can be found [in the examples module](spark-cypher-examples).
+
+### Run example Scala apps via command line
+
+You can use Gradle to run a specific Scala application from command line. For example, to run the `CaseClassExample` 
+within the `spark-cypher-examples` module, we just call:
+
+```
+./gradlew spark-cypher-examples:runApp -PmainClass=org.opencypher.spark.examples.CaseClassExample
+```
 
 ### Loading CSV Data
 
@@ -192,10 +186,10 @@ We would love to find out about any [issues](https://github.com/opencypher/cyphe
 
 ## License
 
-The project is licensed under the Apache Software License, Version 2.0, with an extended attribution notice as described in [the license header](licensecheck-config/src/main/resources/NOTICE-header.txt).
+The project is licensed under the Apache Software License, Version 2.0, with an extended attribution notice as described in [the license header](/etc/licenses/headers/NOTICE-header.txt).
 
 ## Copyright
 
-© Copyright 2016-2018 Neo4j, Inc.
+© Copyright 2016-2019 Neo4j, Inc.
 
 Apache Spark™, Spark, and Apache are registered trademarks of the [Apache Software Foundation](https://www.apache.org/).

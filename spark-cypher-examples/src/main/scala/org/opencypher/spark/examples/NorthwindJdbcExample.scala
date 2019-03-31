@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,11 @@
 package org.opencypher.spark.examples
 
 import org.opencypher.okapi.api.graph.Namespace
+import org.opencypher.spark.api.io.sql.SqlDataSourceConfig
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.util.{ConsoleApp, NorthwindDB}
+import org.opencypher.spark.util.{App, NorthwindDB}
 
-object NorthwindJdbcExample extends ConsoleApp {
+object NorthwindJdbcExample extends App {
 
   implicit val resourceFolder: String = "/northwind"
 
@@ -42,12 +43,16 @@ object NorthwindJdbcExample extends ConsoleApp {
   // this holds the data source mappings files and the SQL DDL file
   // the latter contains the graph definitions and mappings from SQL tables that fill the graph with data
 
+  val dataSourceConfig = SqlDataSourceConfig.Jdbc(
+    url = "jdbc:h2:mem:NORTHWIND.db;DB_CLOSE_DELAY=30;",
+    driver = "org.h2.Driver"
+  )
   val sqlGraphSource = GraphSources
     .sql(resource("ddl/northwind.ddl").getFile)
-    .withSqlDataSourceConfigs(resource("ddl/jdbc-data-sources.json").getFile)
+    .withSqlDataSourceConfigs("H2" -> dataSourceConfig)
 
   // start up the SQL database
-  NorthwindDB.init(sqlGraphSource.sqlDataSourceConfigs.find(_.dataSourceName == "H2").get)
+  NorthwindDB.init(dataSourceConfig)
 
   // register the SQL graph source with the session
   session.registerSource(Namespace("sql"), sqlGraphSource)
@@ -69,7 +74,7 @@ object NorthwindJdbcExample extends ConsoleApp {
       |FROM GRAPH sql.Northwind
       |MATCH (e:Employee)-[:REPORTS_TO]->(:Employee)<-[:HAS_EMPLOYEE]-(o:Order)
       |RETURN o.customerID AS customer, o.orderDate AS orderedAt, e.lastName AS handledBy, e.title AS employee
-      |  ORDER BY o.orderDate, handledBy, customer
+      |  ORDER BY orderedAt, handledBy, customer
       |  LIMIT 50
       |""".stripMargin).show
 

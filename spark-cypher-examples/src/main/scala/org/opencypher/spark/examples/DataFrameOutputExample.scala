@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ import org.apache.spark.sql.{DataFrame, functions}
 import org.opencypher.okapi.api.graph.CypherResult
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.api.CAPSSession._
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * Shows how to access a Cypher query result as a [[DataFrame]].
   */
-object DataFrameOutputExample extends ConsoleApp {
+object DataFrameOutputExample extends App {
 
   // 1) Create CAPS session and retrieve Spark session
   implicit val session: CAPSSession = CAPSSession.local()
@@ -53,8 +53,7 @@ object DataFrameOutputExample extends ConsoleApp {
   val df: DataFrame = results.records.asDataFrame
 
   // 5) Select specific return items from the query result
-  val cols = results.records.columnsFor("a.name") ++ results.records.columnsFor("b.name")
-  val projection: DataFrame = df.select(cols.head, cols.tail.toSeq: _*)
+  val projection: DataFrame = df.select("a_name", "b_name")
 
   projection.show()
 }

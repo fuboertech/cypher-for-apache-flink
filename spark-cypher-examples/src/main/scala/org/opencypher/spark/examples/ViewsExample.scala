@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,12 +28,12 @@
 package org.opencypher.spark.examples
 
 import org.opencypher.spark.api.CAPSSession
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * Demonstrates how to use views to filter graphs.
   */
-object ViewsExample extends ConsoleApp {
+object ViewsExample extends App {
   // 1) Create CAPS session and retrieve Spark session
   implicit val session: CAPSSession = CAPSSession.local()
 
@@ -76,7 +76,8 @@ object ViewsExample extends ConsoleApp {
   val results = session.cypher(
     """|FROM youngFriends(sn)
        |MATCH (p: Person)-[r]->(e)
-       |RETURN p, r, e""".stripMargin)
+       |RETURN p, r, e
+       |ORDER BY p.age""".stripMargin)
 
   results.show
 }

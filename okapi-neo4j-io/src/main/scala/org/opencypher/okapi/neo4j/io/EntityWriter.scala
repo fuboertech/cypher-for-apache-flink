@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ object EntityWriter extends Logging {
 
             val entityType = if (originalMessage.contains("Node(")) "nodes" else "relationships"
 
-            val duplicateIdRegex = """.+(\d+)$""".r
+            val duplicateIdRegex = """.+('[0-9a-fA-F]+')$""".r
             val duplicateId = originalMessage match {
               case duplicateIdRegex(idString) => idString
               case _ => "UNKNOWN"

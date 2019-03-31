@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,34 +27,35 @@
 // tag::full-example[]
 package org.opencypher.spark.examples
 
-import org.neo4j.harness.ServerControls
 import org.opencypher.okapi.api.graph.Namespace
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
-import org.opencypher.okapi.neo4j.io.testing.Neo4jHarnessUtils._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jTestUtils._
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.testing.support.creation.CAPSNeo4jHarnessUtils._
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * This application demonstrates the integration of three data sources into a single graph which is used for computing
   * recommendations. Two graphs are loaded from separate Neo4j databases, one graph is loaded from csv files stored in
   * the local file system.
   */
-object RecommendationExample extends ConsoleApp {
+object RecommendationExample extends App {
 
   // Create CAPS session
   implicit val caps: CAPSSession = CAPSSession.local()
 
-  // Start two Neo4j instances and populate them with social network data
-  implicit val neo4jServerUS: ServerControls = startNeo4j(socialNetworkUS).withSchemaProcedure
-  implicit val neo4jServerEU: ServerControls = startNeo4j(socialNetworkEU).withSchemaProcedure
+  // Connect to two Neo4j instances and populate them with social network data
+  // To run two test instances you may use
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStartTwoInstances
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStopTwoInstances
+  val neo4jServerUS = connectNeo4j(socialNetworkUS, "bolt://localhost:7687")
+  val neo4jServerEU = connectNeo4j(socialNetworkEU, "bolt://localhost:7688")
 
   // Register Property Graph Data Sources (PGDS)
 
   // The graph within Neo4j is partitioned into regions using a property key. Within the data source, we map each
   // partition to a separate graph name (i.e. US and EU)
-  caps.registerSource(Namespace("usSocialNetwork"), GraphSources.cypher.neo4j(neo4jServerUS.dataSourceConfig))
-  caps.registerSource(Namespace("euSocialNetwork"), GraphSources.cypher.neo4j(neo4jServerEU.dataSourceConfig))
+  caps.registerSource(Namespace("usSocialNetwork"), GraphSources.cypher.neo4j(neo4jServerUS.config))
+  caps.registerSource(Namespace("euSocialNetwork"), GraphSources.cypher.neo4j(neo4jServerEU.config))
 
   // File-based CSV GDS
   caps.registerSource(Namespace("purchases"), GraphSources.fs(rootPath = s"${getClass.getResource("/fs-graphsource/csv").getFile}").csv)
@@ -112,9 +113,8 @@ object RecommendationExample extends ConsoleApp {
   recommendationTable.show
 
   // Shutdown Neo4j test instance
-  neo4jServerUS.stop()
-  neo4jServerEU.stop()
-
+  neo4jServerUS.close()
+  neo4jServerEU.close()
 
   def socialNetworkUS =
     """

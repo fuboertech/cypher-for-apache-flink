@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,14 @@ import org.opencypher.okapi.api.graph.{GraphName, Node, Relationship}
 import org.opencypher.okapi.api.value.CypherValue.CypherMap
 import org.opencypher.okapi.testing.Bag
 import org.opencypher.spark.api.GraphSources
-import org.opencypher.spark.api.io.ParquetFormat
+import org.opencypher.spark.api.io.FileFormat
 import org.opencypher.spark.api.io.util.HiveTableName
+import org.opencypher.spark.api.value.CAPSEntity._
 import org.opencypher.spark.api.value.CAPSNode
-import org.opencypher.spark.impl.acceptance.DefaultGraphInit
+import org.opencypher.spark.impl.acceptance.ScanGraphInit
 import org.opencypher.spark.testing.CAPSTestSuite
 
-class FSGraphSourceTest extends CAPSTestSuite with DefaultGraphInit {
+class FSGraphSourceTest extends CAPSTestSuite with ScanGraphInit {
 
   private var tempDir = new TemporaryFolder()
 
@@ -67,21 +68,22 @@ class FSGraphSourceTest extends CAPSTestSuite with DefaultGraphInit {
     it("writes nodes and relationships to hive tables") {
       val given = testGraph
 
-      val fs = new FSGraphSource("file:///" + tempDir.getRoot.getAbsolutePath.replace("\\", "/"), ParquetFormat, Some(testDatabaseName), None)
+      val fs = new FSGraphSource("file:///" + tempDir.getRoot.getAbsolutePath.replace("\\", "/"),
+        FileFormat.parquet, Some(testDatabaseName), None)
       fs.store(graphName, given)
 
       val nodeResult = caps.sparkSession.sql(s"SELECT * FROM $nodeTableName")
       nodeResult.collect().toSet should equal(
         Set(
-          Row(1, "c"),
-          Row(0, "a")
+          Row(1.encodeAsCAPSId, "c"),
+          Row(0.encodeAsCAPSId, "a")
         )
       )
 
       val relResult = caps.sparkSession.sql(s"SELECT * FROM $relTableName")
       relResult.collect().toSet should equal(
         Set(
-          Row(2, 0, 1, "b")
+          Row(2.encodeAsCAPSId, 0.encodeAsCAPSId, 1.encodeAsCAPSId, "b")
         )
       )
     }
@@ -89,7 +91,8 @@ class FSGraphSourceTest extends CAPSTestSuite with DefaultGraphInit {
     it("deletes the hive database if the graph is deleted") {
       val given = testGraph
 
-      val fs = new FSGraphSource("file:///" + tempDir.getRoot.getAbsolutePath.replace("\\", "/"), ParquetFormat, Some(testDatabaseName), None)
+      val fs = new FSGraphSource("file:///" + tempDir.getRoot.getAbsolutePath.replace("\\", "/"),
+        FileFormat.parquet, Some(testDatabaseName), None)
       fs.store(graphName, given)
 
       caps.sparkSession.sql(s"SELECT * FROM $nodeTableName").collect().toSet should not be empty
@@ -120,7 +123,7 @@ class FSGraphSourceTest extends CAPSTestSuite with DefaultGraphInit {
 
       val graph = fs.graph(graphName)
 
-      graph.nodes("n").toMapsWithCollectedEntities should equal(Bag(
+      graph.nodes("n").toMaps should equal(Bag(
         CypherMap("n" -> CAPSNode(0, Set("A"), CypherMap("foo@bar" -> 42)))
       ))
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,15 @@ import org.opencypher.okapi.ir.api.expr.Expr
 import org.opencypher.okapi.ir.impl.IrTestSuite
 import org.opencypher.okapi.ir.impl.util.VarConverters.toField
 
+import scala.collection.immutable.ListMap
+
 class PatternTest extends IrTestSuite {
 
   test("add connection") {
     Pattern
       .empty[Expr]
       .withConnection('r, DirectedRelationship('a, 'b)) should equal(
-      Pattern(Set.empty, Map(toField('r) -> DirectedRelationship('a, 'b)))
+      Pattern(Set.empty, ListMap(toField('r) -> DirectedRelationship('a, 'b)))
     )
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,11 @@ import java.io.File
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.internal.StaticSQLConf.CATALOG_IMPLEMENTATION
 import org.opencypher.okapi.api.graph.Namespace
+import org.opencypher.spark.api.io.sql.SqlDataSourceConfig.Hive
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.util.{CensusDB, ConsoleApp}
+import org.opencypher.spark.util.{App, CensusDB}
 
-object CensusHiveExample extends ConsoleApp {
+object CensusHiveExample extends App {
 
   implicit val resourceFolder: String = "/census"
 
@@ -51,11 +52,11 @@ object CensusHiveExample extends ConsoleApp {
   val graphName = "Census_1901"
   val sqlGraphSource = GraphSources
       .sql(resource("ddl/census.ddl").getFile)
-      .withSqlDataSourceConfigs(resource("ddl/hive-data-sources.json").getFile)
+      .withSqlDataSourceConfigs("CENSUS" -> Hive)
 
   // tag::prepare-sql-database[]
   // Create the data in H2 in-memory database
-  CensusDB.createHiveData(sqlGraphSource.sqlDataSourceConfigs.find(_.dataSourceName == "CENSUS").get)
+  CensusDB.createHiveData(Hive)
   // end::prepare-sql-database[]
 
   session.registerSource(Namespace("sql"), sqlGraphSource)

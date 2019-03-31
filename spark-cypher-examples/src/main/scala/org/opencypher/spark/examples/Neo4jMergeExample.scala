@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,23 +29,25 @@ package org.opencypher.spark.examples
 
 import org.opencypher.okapi.api.graph.Namespace
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
-import org.opencypher.okapi.neo4j.io.testing.Neo4jHarnessUtils._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jTestUtils._
 import org.opencypher.spark.api.io.neo4j.sync.Neo4jGraphMerge
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.testing.support.creation.CAPSNeo4jHarnessUtils._
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * Demonstrates merging a graph into an existing Neo4j database.
   *
   * This merge requires node and relationship keys to identify same entities in the merge graph and the Neo4j database.
   */
-object Neo4jMergeExample extends ConsoleApp {
+object Neo4jMergeExample extends App {
   // Create CAPS session
   implicit val session: CAPSSession = CAPSSession.local()
 
-  // Start a Neo4j instance and populate it with social network data
-  val neo4j = startNeo4j(
+  // Connect to a Neo4j instance and populates it with social network data
+  // To run a test instance you may use
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStart
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStop
+  val neo4j = connectNeo4j(
     """
        |CREATE (a:Person { name: 'Alice', age: 10 })
        |CREATE (b:Person { name: 'Bob', age: 20})
@@ -53,7 +55,7 @@ object Neo4jMergeExample extends ConsoleApp {
        |CREATE (a)-[:FRIEND_OF { id: 0, since: '23/01/1987' }]->(b)
        |CREATE (b)-[:FRIEND_OF { id: 1, since: '12/12/2009' }]->(c)
     """.stripMargin
-  ).withSchemaProcedure
+  )
 
   // Define the node and relationship keys
   val nodeKeys = Map("Person" -> Set("name"))
@@ -77,10 +79,10 @@ object Neo4jMergeExample extends ConsoleApp {
   // Neo4jGraphMerge.createIndexes(entireGraphName, neo4j.dataSourceConfig, nodeKeys)
 
   // Merge graph into existing Neo4j database
-  Neo4jGraphMerge.merge(entireGraphName, mergeGraph, neo4j.dataSourceConfig, Some(nodeKeys), Some(relKeys))
+  Neo4jGraphMerge.merge(entireGraphName, mergeGraph, neo4j.config, Some(nodeKeys), Some(relKeys))
 
   // Register Property Graph Data Source (PGDS) to read the updated graph from Neo4j
-  session.registerSource(Namespace("updatedSocialNetwork"), GraphSources.cypher.neo4j(neo4j.dataSourceConfig))
+  session.registerSource(Namespace("updatedSocialNetwork"), GraphSources.cypher.neo4j(neo4j.config))
 
   // Access the graphs via their qualified graph names
   val updatedSocialNetwork = session.catalog.graph("updatedSocialNetwork.graph")
@@ -97,11 +99,11 @@ object Neo4jMergeExample extends ConsoleApp {
       |MATCH (p:Person)
       |OPTIONAL MATCH (p)-[r:FRIEND_OF|MARRIED_TO]->(o:Person)
       |RETURN p, r, o
-      |ORDER BY p.name
+      |ORDER BY p.name, r.since
     """.stripMargin).records.show
 
-  // Shutdown Neo4j test instance
-  neo4j.stop()
+  // Reset Neo4j test instance and close the session and driver
+  neo4j.close()
 
   }
 // end::full-example[]

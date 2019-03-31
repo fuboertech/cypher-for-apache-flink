@@ -1,0 +1,7 @@
+[[example-northwind-sql-jdbc]]
+= Northwind SQL graph source example using JDBC
+
+[source, scala]
+----
+include::{examples-dir}/NorthwindJdbcExample.scala[tags=full-example]
+----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,30 +28,28 @@ package org.opencypher.spark.impl
 
 import org.apache.spark.sql.Row
 import org.opencypher.okapi.api.value.CypherValue.CypherMap
-import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
 import org.opencypher.okapi.relational.api.graph.RelationalCypherGraph
 import org.opencypher.okapi.testing.Bag
 import org.opencypher.okapi.testing.Bag._
-import org.opencypher.spark.api.GraphSources
 import org.opencypher.spark.api.value.{CAPSNode, CAPSRelationship}
 import org.opencypher.spark.impl.CAPSConverters._
+import org.opencypher.spark.impl.acceptance.ScanGraphInit
 import org.opencypher.spark.impl.table.SparkTable.DataFrameTable
 import org.opencypher.spark.testing.CAPSTestSuite
-import org.opencypher.spark.testing.fixture.{CAPSNeo4jServerFixture, OpenCypherDataFixture}
+import org.opencypher.spark.testing.fixture.OpenCypherDataFixture
 
 import scala.language.reflectiveCalls
 
-class CAPSRecordsAcceptanceTest extends CAPSTestSuite with CAPSNeo4jServerFixture with OpenCypherDataFixture {
+class CAPSRecordsAcceptanceTest extends CAPSTestSuite with ScanGraphInit with OpenCypherDataFixture {
 
-  private lazy val graph: RelationalCypherGraph[DataFrameTable] =
-    GraphSources.cypher.neo4j(neo4jConfig).graph(entireGraphName).asCaps
+  private lazy val graph: RelationalCypherGraph[DataFrameTable] = initGraph(dataFixture)
 
   it("convert nodes to CypherMaps") {
     // When
     val result = graph.cypher("MATCH (a:Person) WHERE a.birthyear < 1930 RETURN a, a.name")
 
     // Then
-    result.records.collect should equal(Array(
+    result.records.collect.toBag should equal(Bag(
       CypherMap("a" -> CAPSNode(0, Set("Actor", "Person"), CypherMap("birthyear" -> 1910, "name" -> "Rachel Kempson")), "a.name" -> "Rachel Kempson"),
       CypherMap("a" -> CAPSNode(1, Set("Actor", "Person"), CypherMap("birthyear" -> 1908, "name" -> "Michael Redgrave")), "a.name" -> "Michael Redgrave"),
       CypherMap("a" -> CAPSNode(10, Set("Actor", "Person"), CypherMap("birthyear" -> 1873, "name" -> "Roy Redgrave")), "a.name" -> "Roy Redgrave")
@@ -63,10 +61,10 @@ class CAPSRecordsAcceptanceTest extends CAPSTestSuite with CAPSNeo4jServerFixtur
     val result = graph.cypher("MATCH ()-[r:ACTED_IN]->() WHERE r.charactername ENDS WITH 'e' RETURN r")
 
     // Then
-    result.records.collect should equal(Array(
-      CypherMap("r" -> CAPSRelationship(23, 6, 18, "ACTED_IN", CypherMap("charactername" -> "Albus Dumbledore"))),
-      CypherMap("r" -> CAPSRelationship(21, 2, 20, "ACTED_IN", CypherMap("charactername" -> "Guenevere"))),
-      CypherMap("r" -> CAPSRelationship(26, 8, 19, "ACTED_IN", CypherMap("charactername" -> "Halle/Annie")))
+    result.records.collect.toBag should equal(Bag(
+      CypherMap("r" -> CAPSRelationship(46, 6, 18, "ACTED_IN", CypherMap("charactername" -> "Albus Dumbledore"))),
+      CypherMap("r" -> CAPSRelationship(44, 2, 20, "ACTED_IN", CypherMap("charactername" -> "Guenevere"))),
+      CypherMap("r" -> CAPSRelationship(49, 8, 19, "ACTED_IN", CypherMap("charactername" -> "Halle/Annie")))
     ))
   }
 
@@ -99,7 +97,7 @@ class CAPSRecordsAcceptanceTest extends CAPSTestSuite with CAPSNeo4jServerFixtur
     result.records.collect.toBag should equal(Bag(
       CypherMap(
         "a" -> CAPSNode(2, Set("Actor", "Person"), CypherMap("birthyear" -> 1937, "name" -> "Vanessa Redgrave")),
-        "r" -> CAPSRelationship(21, 2, 20, "ACTED_IN", CypherMap("charactername" -> "Guenevere"))
+        "r" -> CAPSRelationship(44, 2, 20, "ACTED_IN", CypherMap("charactername" -> "Guenevere"))
       )
     ))
   }

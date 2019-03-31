@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,26 +29,56 @@ package org.opencypher.spark.api.io.neo4j
 import org.apache.spark.SparkException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
+import org.mockito.Mockito
+import org.mockito.Mockito._
 import org.opencypher.okapi.api.graph.{CypherResult, GraphName, Namespace}
-import org.opencypher.okapi.api.io.conversion.NodeMapping
+import org.opencypher.okapi.api.io.conversion.NodeMappingBuilder
 import org.opencypher.okapi.api.value.CypherValue.{CypherMap, CypherNull}
-import org.opencypher.okapi.impl.exception.{IllegalArgumentException, UnsupportedOperationException}
+import org.opencypher.okapi.impl.exception.{IllegalArgumentException, SchemaException}
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
 import org.opencypher.okapi.neo4j.io.Neo4jHelpers.Neo4jDefaults._
 import org.opencypher.okapi.neo4j.io.Neo4jHelpers._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jServerFixture
 import org.opencypher.okapi.testing.Bag
 import org.opencypher.okapi.testing.Bag._
 import org.opencypher.spark.api.CypherGraphSources
-import org.opencypher.spark.api.io.CAPSNodeTable
+import org.opencypher.spark.api.io.{AbstractPropertyGraphDataSource, CAPSEntityTable}
 import org.opencypher.spark.api.value.CAPSNode
 import org.opencypher.spark.impl.CAPSConverters._
 import org.opencypher.spark.testing.CAPSTestSuite
-import org.opencypher.spark.testing.fixture.{CAPSNeo4jServerFixture, TeamDataFixture}
+import org.opencypher.spark.testing.fixture.TeamDataFixture
+import org.opencypher.spark.testing.utils.BagHelpers._
 
 class Neo4jPropertyGraphDataSourceTest
   extends CAPSTestSuite
-    with CAPSNeo4jServerFixture
+    with Neo4jServerFixture
     with TeamDataFixture {
+
+  it("should cache the schema during and between queries") {
+    val spiedPGDS = spy(CypherGraphSources.neo4j(neo4jConfig))
+
+    caps.registerSource(Namespace("pgds"), spiedPGDS)
+
+    caps.cypher(
+      s"""
+         |FROM pgds.$entireGraphName
+         |MATCH (n)
+         |RETURN 1
+      """.stripMargin
+    ).records.size
+
+    caps.cypher(
+      s"""
+         |FROM pgds.$entireGraphName
+         |MATCH (n)
+         |RETURN 1
+      """.stripMargin
+    ).records.size
+
+    // we will request schema many times but should only compute it once
+    verify(spiedPGDS, Mockito.atLeast(2)).schema(entireGraphName)
+    verify(spiedPGDS.asInstanceOf[AbstractPropertyGraphDataSource], times(1)).readSchema(entireGraphName)
+  }
 
   it("can read lists from Neo4j") {
     val graph = CypherGraphSources.neo4j(neo4jConfig).graph(entireGraphName).asCaps
@@ -63,8 +93,8 @@ class Neo4jPropertyGraphDataSourceTest
 
   it("should load a graph from Neo4j via DataSource") {
     val graph = CypherGraphSources.neo4j(neo4jConfig).graph(entireGraphName).asCaps
-    graph.nodes("n").asCaps.toCypherMaps.collect.toBag should equal(teamDataGraphNodes)
-    graph.relationships("r").asCaps.toCypherMaps.collect.toBag should equal(teamDataGraphRels)
+    graph.nodes("n").asCaps.toCypherMaps.collect.toBag.nodeValuesWithoutIds shouldEqual teamDataGraphNodes.nodeValuesWithoutIds
+    graph.relationships("r").asCaps.toCypherMaps.collect.toBag.relValuesWithoutIds shouldEqual teamDataGraphRels.relValuesWithoutIds
   }
 
   it("should load a graph from Neo4j via catalog") {
@@ -73,14 +103,14 @@ class Neo4jPropertyGraphDataSourceTest
     caps.registerSource(testNamespace, CypherGraphSources.neo4j(neo4jConfig))
 
     val nodes: CypherResult = caps.cypher(s"FROM GRAPH $testNamespace.$entireGraphName MATCH (n) RETURN n")
-    nodes.records.collect.toBag should equal(teamDataGraphNodes)
+    nodes.records.collect.toBag.nodeValuesWithoutIds shouldEqual teamDataGraphNodes.nodeValuesWithoutIds
 
     val edges = caps.cypher(s"FROM GRAPH $testNamespace.$entireGraphName MATCH ()-[r]->() RETURN r")
-    edges.records.collect.toBag should equal(teamDataGraphRels)
+    edges.records.collect.toBag.relValuesWithoutIds shouldEqual teamDataGraphRels.relValuesWithoutIds
   }
 
   it("should omit properties with unsupported types if corresponding flag is set") {
-    neo4jConfig.cypher(s"""CREATE (n:Unsupported:${metaPrefix}test { foo: time(), bar: 42 })""")
+    neo4jConfig.cypherWithNewSession(s"""CREATE (n:Unsupported:${metaPrefix}test { foo: duration('P2.5W'), bar: 42 })""")
 
     val dataSource = CypherGraphSources.neo4j(neo4jConfig, omitIncompatibleProperties = true)
     val graph = dataSource.graph(GraphName("test")).asCaps
@@ -93,8 +123,8 @@ class Neo4jPropertyGraphDataSourceTest
   }
 
   it("should throw exception if properties with unsupported types are being imported") {
-    an[UnsupportedOperationException] should be thrownBy {
-      neo4jConfig.cypher(s"""CREATE (n:Unsupported:${metaPrefix}test { foo: time(), bar: 42 })""")
+    a[SchemaException] should be thrownBy {
+      neo4jConfig.cypherWithNewSession(s"""CREATE (n:Unsupported:${metaPrefix}test { foo: time(), bar: 42 })""")
 
       val dataSource = CypherGraphSources.neo4j(neo4jConfig)
       val graph = dataSource.graph(GraphName("test")).asCaps
@@ -108,9 +138,9 @@ class Neo4jPropertyGraphDataSourceTest
     val node1DF = sparkSession.createDataFrame(List(Row(1L)).asJava, schema)
     val node2DF = sparkSession.createDataFrame(List(Row(1L)).asJava, schema)
 
-    val nodeMapping = NodeMapping.create("id")
-    val node1Table = CAPSNodeTable(nodeMapping, node1DF)
-    val node2Table = CAPSNodeTable(nodeMapping, node2DF)
+    val nodeMapping = NodeMappingBuilder.create("id")
+    val node1Table = CAPSEntityTable.create(nodeMapping, node1DF)
+    val node2Table = CAPSEntityTable.create(nodeMapping, node2DF)
 
     val graph = caps.readFrom(node1Table, node2Table)
 
@@ -120,7 +150,7 @@ class Neo4jPropertyGraphDataSourceTest
       dataSource.store(GraphName("foo"), graph)
     }
     sparkException.getCause.getMessage should equal(
-      "Could not write the graph to Neo4j. The graph you are attempting to write contains at least two nodes with CAPS id 1"
+      "Could not write the graph to Neo4j. The graph you are attempting to write contains at least two nodes with CAPS id '01'"
     )
   }
 

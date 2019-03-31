@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ object IRField {
   }
 }
 
-final case class IRField(name: String)(val cypherType: CypherType = CTWildcard) {
+final case class IRField(name: String)(val cypherType: CypherType = CTAny) {
   override def toString = s"$name :: $cypherType"
 
   def escapedName: String = name.replaceAll("`", "``")

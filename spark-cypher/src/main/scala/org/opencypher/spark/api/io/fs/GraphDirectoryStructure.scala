@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,14 +62,24 @@ object DefaultGraphDirectoryStructure {
 
   val capsMetaDataFileName: String = "capsGraphMetaData.json"
 
-  val nodeTablesDirectory = "nodes"
+  val nodeTablesDirectoryName = "nodes"
 
-  val relationshipTablesDirectory = "relationships"
+  val relationshipTablesDirectoryName = "relationships"
 
-  def nodeTableDirectory(labels: Set[String]): String = labels.toSeq.sorted.mkString("_").encodeSpecialCharacters
+  // Because an empty path does not work, we need a special directory name for nodes without labels.
+  val noLabelNodeDirectoryName: String = "__NO_LABEL__"
 
-  def relKeyTableDirectory(relKey: String): String = relKey.encodeSpecialCharacters
+  def nodeTableDirectoryName(labels: Set[String]): String = concatDirectoryNames(labels.toSeq.sorted)
 
+  def relKeyTableDirectoryName(relKey: String): String = relKey.encodeSpecialCharacters
+
+  def concatDirectoryNames(seq: Seq[String]): String = {
+    if (seq.isEmpty) {
+      noLabelNodeDirectoryName
+    } else {
+      seq.mkString("_").encodeSpecialCharacters
+    }
+  }
 }
 
 case class DefaultGraphDirectoryStructure(dataSourceRootPath: String) extends GraphDirectoryStructure {
@@ -89,11 +99,11 @@ case class DefaultGraphDirectoryStructure(dataSourceRootPath: String) extends Gr
   }
 
   override def pathToNodeTable(graphName: GraphName, labels: Set[String]): String = {
-    pathToGraphDirectory(graphName) / nodeTablesDirectory / nodeTableDirectory(labels)
+    pathToGraphDirectory(graphName) / nodeTablesDirectoryName / nodeTableDirectoryName(labels)
   }
 
   override def pathToRelationshipTable(graphName: GraphName, relKey: String): String = {
-    pathToGraphDirectory(graphName) / relationshipTablesDirectory / relKeyTableDirectory(relKey)
+    pathToGraphDirectory(graphName) / relationshipTablesDirectoryName / relKeyTableDirectoryName(relKey)
   }
 
 }

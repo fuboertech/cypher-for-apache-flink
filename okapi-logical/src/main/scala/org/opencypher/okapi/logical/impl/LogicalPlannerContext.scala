@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,19 @@
  */
 package org.opencypher.okapi.logical.impl
 
-import org.opencypher.okapi.api.graph.Namespace
+import org.opencypher.okapi.api.graph.{Namespace, PropertyGraph, QualifiedGraphName}
 import org.opencypher.okapi.api.io.PropertyGraphDataSource
 import org.opencypher.okapi.api.schema.Schema
 import org.opencypher.okapi.ir.api.expr.Var
+import org.opencypher.okapi.ir.impl.QueryLocalCatalog
 
 final case class LogicalPlannerContext(
   workingGraphSchema: Schema,
   inputRecordFields: Set[Var],
-  catalog: Namespace => PropertyGraphDataSource
-)
+  sessionCatalog: Namespace => PropertyGraphDataSource,
+  queryLocalCatalog: QueryLocalCatalog
+) {
+
+  def resolveGraph(qgn: QualifiedGraphName): PropertyGraph = queryLocalCatalog.graph(qgn)
+  def resolveSchema(qgn: QualifiedGraphName): Schema = queryLocalCatalog.schema(qgn)
+}

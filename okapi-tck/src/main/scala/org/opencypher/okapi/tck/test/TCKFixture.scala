@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,17 @@
  */
 package org.opencypher.okapi.tck.test
 
+import java.time.format.DateTimeFormatter
 import java.util.Objects
 
 import org.opencypher.okapi.api.graph.{CypherSession, PropertyGraph}
 import org.opencypher.okapi.api.table.CypherRecords
 import org.opencypher.okapi.api.value.CypherValue
-import org.opencypher.okapi.api.value.CypherValue.{CypherList => OKAPICypherList, CypherMap => OKAPICypherMap, CypherNode => OKAPICypherNode, CypherRelationship => OKAPICypherRelationship, CypherString => OKAPICypherString, CypherValue => OKAPICypherValue}
+import org.opencypher.okapi.api.value.CypherValue.{CypherDate => OKAPICypherDate, CypherList => OKAPICypherList, CypherLocalDateTime => OKAPICypherLocalDateTime, CypherMap => OKAPICypherMap, CypherNode => OKAPICypherNode, CypherRelationship => OKAPICypherRelationship, CypherString => OKAPICypherString, CypherValue => OKAPICypherValue}
 import org.opencypher.okapi.impl.exception.NotImplementedException
-import org.opencypher.okapi.ir.impl.typer.exception.TypingException
+import org.opencypher.okapi.ir.impl.exception.TypingException
 import org.opencypher.okapi.tck.test.TCKFixture._
-import org.opencypher.okapi.tck.test.support.creation.neo4j.Neo4JGraphFactory
-import org.opencypher.okapi.testing.propertygraph.CypherTestGraphFactory
+import org.opencypher.okapi.testing.propertygraph.{CreateGraphFactory, CypherTestGraphFactory}
 import org.opencypher.tools.tck.api._
 import org.opencypher.tools.tck.constants.{TCKErrorDetails, TCKErrorPhases, TCKErrorTypes}
 import org.opencypher.tools.tck.values.{CypherValue => TCKCypherValue, _}
@@ -84,7 +84,7 @@ case class TCKGraph[C <: CypherSession](testGraphFactory: CypherTestGraphFactory
   override def execute(query: String, params: Map[String, TCKCypherValue], queryType: QueryType): (Graph, Result) = {
     queryType match {
       case InitQuery =>
-        val propertyGraph = testGraphFactory(Neo4JGraphFactory(query, params.mapValues(tckValueToCypherValue)))
+        val propertyGraph = testGraphFactory(CreateGraphFactory(query, params.mapValues(tckValueToCypherValue)))
         copy(graph = propertyGraph) -> CypherValueRecords.empty
       case SideEffectQuery =>
         // this one is tricky, not sure how can do it without Cypher
@@ -152,6 +152,10 @@ case class TCKGraph[C <: CypherSession](testGraphFactory: CypherTestGraphFactory
           Seq(labelString, propertyString)
             .filter(_.nonEmpty)
             .mkString("(", " ", ")")
+        case OKAPICypherDate(date) =>
+          s"'${DateTimeFormatter.ISO_DATE.format(date)}'"
+        case OKAPICypherLocalDateTime(localDateTime) =>
+          s"'$localDateTime'"
         case _ => Objects.toString(value)
       }
     }
@@ -181,6 +185,7 @@ case class ScenariosFor(blacklist: Set[String]) {
   )
 
   def get(name: String): Seq[Scenario] = scenarios.filter(s => s.name == name)
+  def getPrefix(prefix: String): Seq[Scenario] = scenarios.filter(s => s.name.startsWith(prefix))
 }
 
 object ScenariosFor {

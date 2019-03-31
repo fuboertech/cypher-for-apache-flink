@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ package org.opencypher.okapi.relational.api.schema
 import org.opencypher.okapi.api.schema.Schema
 import org.opencypher.okapi.api.types.{CTBoolean, CTNode, CTRelationship}
 import org.opencypher.okapi.impl.exception.IllegalArgumentException
+import org.opencypher.okapi.impl.types.CypherTypeUtils._
 import org.opencypher.okapi.ir.api.expr._
 import org.opencypher.okapi.ir.api.{Label, PropertyKey, RelType}
 import org.opencypher.okapi.relational.impl.table.RecordHeader
@@ -46,10 +47,7 @@ object RelationalSchema {
     }
 
     def headerForNode(node: Var, exactLabelMatch: Boolean = false): RecordHeader = {
-      val labels: Set[String] = node.cypherType match {
-        case CTNode(l, _) => l
-        case other => throw IllegalArgumentException(CTNode, other)
-      }
+      val labels: Set[String] = node.cypherType.toCTNode.labels
       headerForNode(node, labels, exactLabelMatch)
     }
 
@@ -68,7 +66,7 @@ object RelationalSchema {
       }
 
       val labelExpressions: Set[Expr] = labelCombos.flatten.map { label =>
-        HasLabel(node, Label(label))(CTBoolean)
+        HasLabel(node, Label(label))
       }
 
       val propertyExpressions = schema.nodePropertyKeysForCombinations(labelCombos).map {
@@ -107,7 +105,7 @@ object RelationalSchema {
       }.toSet
 
       val startNodeExpr = StartNode(rel)(CTNode)
-      val hasTypeExprs = relTypes.map(relType => HasType(rel, RelType(relType))(CTBoolean))
+      val hasTypeExprs = relTypes.map(relType => HasType(rel, RelType(relType)))
       val endNodeExpr = EndNode(rel)(CTNode)
 
       val relationshipExpressions = hasTypeExprs ++ propertyExpressions + rel + startNodeExpr + endNodeExpr

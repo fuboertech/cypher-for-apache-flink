@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,12 @@ class RecordHeaderTest extends BaseTestSuite {
   val relList: Var = Var("l")(CTList(CTRelationship))
   val relListSegment: ListSegment = ListSegment(0, relList)(CTRelationship)
 
-  val countN = CountStar(CTInteger)
+  val countN = CountStar
 
-  val nLabelA: HasLabel = HasLabel(n, Label("A"))(CTBoolean)
-  val nLabelB: HasLabel = HasLabel(n, Label("B"))(CTBoolean)
+  val nLabelA: HasLabel = HasLabel(n, Label("A"))
+  val nLabelB: HasLabel = HasLabel(n, Label("B"))
   val nPropFoo: Property = Property(n, PropertyKey("foo"))(CTString)
+  val mPropFoo: Property = Property(m, PropertyKey("foo"))(CTString)
   val nExprs: Set[Expr] = Set(n, nLabelA, nLabelB, nPropFoo)
   val mExprs: Set[Expr] = nExprs.map(_.withOwner(m))
   val oExprs: Set[Expr] = nExprs.map(_.withOwner(o))
@@ -59,7 +60,7 @@ class RecordHeaderTest extends BaseTestSuite {
 
   val rStart: StartNode = StartNode(r)(CTNode)
   val rEnd: EndNode = EndNode(r)(CTNode)
-  val rRelType: HasType = HasType(r, RelType("R"))(CTBoolean)
+  val rRelType: HasType = HasType(r, RelType("R"))
   val rPropFoo: Property = Property(r, PropertyKey("foo"))(CTString)
   val rExprs: Set[Expr] = Set(r, rStart, rEnd, rRelType, rPropFoo)
   val relListExprs: Set[Expr] = Set(relListSegment) ++ Set(rStart, rEnd, rRelType, rPropFoo).map(_.withOwner(relListSegment))
@@ -115,7 +116,7 @@ class RecordHeaderTest extends BaseTestSuite {
   }
 
   it("can add entity expressions without column collisions") {
-    val underlineHeader = RecordHeader.empty.withExpr(Var("_")()).withExpr(Var(".")())
+    val underlineHeader = RecordHeader.empty.withExpr(Var("_")()).withExpr(Var(".")(CTAny))
     underlineHeader.columns.size should be(2)
   }
 
@@ -142,6 +143,17 @@ class RecordHeaderTest extends BaseTestSuite {
 
     withAlias.ownedBy(n) should equalWithTracing(nExprs)
     withAlias.ownedBy(m) should equalWithTracing(mExprs)
+  }
+
+  it("can add an alias for an entity that already exists but with different CypherType") {
+    val withAlias = nHeader.withAlias(n as Var(n.name)(CTNode))
+
+    withAlias.entityVars.size should be(1)
+    val entity = withAlias.entityVars.head
+
+    entity should equal(n)
+    entity.cypherType should equal(CTNode)
+
   }
 
   it("can add an alias for a non-entity expression") {
@@ -178,12 +190,13 @@ class RecordHeaderTest extends BaseTestSuite {
     unionHeader.ownedBy(o) should equalWithTracing(oExprs)
   }
 
-  it("can combine headers with same vars but different cypherType") {
+  it("can combine headers with same vars and compatible cypherType") {
     Seq(
       CTBoolean -> CTBoolean,
-      CTInteger -> CTString,
       CTNode("A") -> CTNode("B"),
-      CTRelationship("A") -> CTRelationship("B")
+      CTNode("A") -> CTNode("A", "B"),
+      CTRelationship("A") -> CTRelationship("B"),
+      CTRelationship("A") -> CTRelationship("A", "B")
     ).foreach {
       case (p1Type, p2Type) =>
         val p1 = Var("p")(p1Type)
@@ -458,9 +471,17 @@ class RecordHeaderTest extends BaseTestSuite {
   it("renames multiple columns") {
     val newName1 = "foo"
     val newName2 = "lalala"
-    val modifiedHeader = nHeader.withColumnsRenamed(Map(nPropFoo -> newName1, nLabelA -> newName2))
+    val modifiedHeader = nHeader.withColumnsRenamed(Seq(nPropFoo -> newName1, nLabelA -> newName2))
     modifiedHeader.column(nPropFoo) should equal(newName1)
     modifiedHeader.column(nLabelA) should equal(newName2)
+  }
+
+  it("replaces multiple columns") {
+    val aliasHeader = nHeader.withAlias(n as m) // WITH n AS m
+    val replaceHeader = aliasHeader.withColumnsReplaced(Map(nPropFoo -> "nFoo", mPropFoo -> "mFoo"))
+
+    aliasHeader.columns.size should equal(nExprs.size)
+    replaceHeader.columns.size should equal(nExprs.size + 1)
   }
 
   describe("join") {
@@ -489,29 +510,29 @@ class RecordHeaderTest extends BaseTestSuite {
     it("can build a RecordHeader from a Relationship type") {
       val relType = CTRelationship("FOO", "BAR")
 
-      val v = RelationshipVar("")(relType)
+      val v = Var("rel")(relType)
 
       val expected = RecordHeader.empty
         .withExpr(v)
-        .withExpr(StartNode(v)(CTInteger))
-        .withExpr(EndNode(v)(CTInteger))
-        .withExpr(HasType(v, RelType("FOO"))(CTBoolean))
-        .withExpr(HasType(v, RelType("BAR"))(CTBoolean))
+        .withExpr(StartNode(v)(CTIdentity))
+        .withExpr(EndNode(v)(CTIdentity))
+        .withExpr(HasType(v, RelType("FOO")))
+        .withExpr(HasType(v, RelType("BAR")))
 
-      RecordHeader.from(relType) should equal(expected)
+      RecordHeader.from(v) should equal(expected)
     }
 
     it("can build a RecordHeader from a node type") {
       val nodeType = CTNode("FOO", "BAR")
 
-      val v = NodeVar("")(nodeType)
+      val v = Var("node")(nodeType)
 
       val expected = RecordHeader.empty
         .withExpr(v)
-        .withExpr(HasLabel(v, Label("FOO"))(CTBoolean))
-        .withExpr(HasLabel(v, Label("BAR"))(CTBoolean))
+        .withExpr(HasLabel(v, Label("FOO")))
+        .withExpr(HasLabel(v, Label("BAR")))
 
-      RecordHeader.from(nodeType) should equal(expected)
+      RecordHeader.from(v) should equal(expected)
     }
   }
 }

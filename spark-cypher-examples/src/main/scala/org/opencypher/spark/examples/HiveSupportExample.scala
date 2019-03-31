@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import org.apache.spark.sql.SparkSession
 import org.opencypher.okapi.api.graph.{GraphName, Node}
 import org.opencypher.spark.api.io.util.HiveTableName
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
-object HiveSupportExample extends ConsoleApp {
+object HiveSupportExample extends App {
 
   val sparkSession = SparkSession
     .builder()

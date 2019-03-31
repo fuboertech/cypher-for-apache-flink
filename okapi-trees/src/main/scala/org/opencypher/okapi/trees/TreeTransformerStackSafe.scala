@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ trait SameTypeTransformerStackSafe[T <: TreeNode[T]] extends TransformerStackSaf
 
   protected val partial: PartialFunction[T, T]
 
-  @inline final def rule: T => T = partial.orElse(PartialFunction(identity[T]))
+  @inline final def rule: T => T = partial.orElse { case t => t }
 
 }
 

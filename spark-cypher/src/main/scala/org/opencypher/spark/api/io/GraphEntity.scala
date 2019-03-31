@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
  */
 package org.opencypher.spark.api.io
 
+import org.opencypher.okapi.api.graph.{SourceEndNodeKey, SourceIdKey, SourceStartNodeKey}
+
 import scala.annotation.StaticAnnotation
 
 sealed trait GraphEntity extends Product {
@@ -33,7 +35,7 @@ sealed trait GraphEntity extends Product {
 }
 
 object GraphEntity {
-  val sourceIdKey = "id"
+  val sourceIdKey: String = SourceIdKey.name
 }
 
 /**
@@ -44,11 +46,11 @@ object GraphEntity {
 trait Node extends GraphEntity
 
 object Relationship {
-  val sourceStartNodeKey = "source"
+  val sourceStartNodeKey: String = SourceStartNodeKey.name
 
-  val sourceEndNodeKey = "target"
+  val sourceEndNodeKey: String = SourceEndNodeKey.name
 
-  val nonPropertyAttributes = Set(GraphEntity.sourceIdKey, sourceStartNodeKey, sourceEndNodeKey)
+  val nonPropertyAttributes: Set[String] = Set(GraphEntity.sourceIdKey, sourceStartNodeKey, sourceEndNodeKey)
 }
 
 /**

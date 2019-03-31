@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,20 @@
  */
 package org.opencypher.okapi.relational.api.graph
 
-import org.opencypher.okapi.api.graph.{PropertyGraph, QualifiedGraphName}
+import org.opencypher.okapi.api.graph.{PropertyGraph, QualifiedGraphName, _}
 import org.opencypher.okapi.api.schema.Schema
-import org.opencypher.okapi.api.types.{CTNode, CTRelationship, CypherType}
+import org.opencypher.okapi.api.table.CypherRecords
+import org.opencypher.okapi.api.types.{CTNode, CTRelationship}
+import org.opencypher.okapi.api.value.CypherValue
 import org.opencypher.okapi.impl.exception.UnsupportedOperationException
-import org.opencypher.okapi.relational.api.io.{EntityTable, NodeTable}
-import org.opencypher.okapi.relational.api.planning.RelationalRuntimeContext
+import org.opencypher.okapi.ir.api.expr.PrefixId.GraphIdPrefix
+import org.opencypher.okapi.ir.api.expr.{NodeVar, RelationshipVar}
+import org.opencypher.okapi.ir.impl.util.VarConverters._
+import org.opencypher.okapi.relational.api.io.EntityTable
+import org.opencypher.okapi.relational.api.planning.{RelationalCypherResult, RelationalRuntimeContext}
 import org.opencypher.okapi.relational.api.table.{RelationalCypherRecords, Table}
-import org.opencypher.okapi.relational.api.tagging.TagSupport._
-import org.opencypher.okapi.relational.impl.graph.{EmptyGraph, ScanGraph, UnionGraph}
-import org.opencypher.okapi.relational.impl.operators.RelationalOperator
+import org.opencypher.okapi.relational.impl.graph.{EmptyGraph, PrefixedGraph, ScanGraph, UnionGraph}
+import org.opencypher.okapi.relational.impl.operators.{RelationalOperator, Select}
 import org.opencypher.okapi.relational.impl.planning.RelationalPlanner._
 
 import scala.reflect.runtime.universe.TypeTag
@@ -48,32 +52,30 @@ trait RelationalCypherGraphFactory[T <: Table[T]] {
 
   private[opencypher] implicit def tableTypeTag: TypeTag[T] = session.tableTypeTag
 
-  def unionGraph(graphs: RelationalCypherGraph[T]*)(implicit context: RelationalRuntimeContext[T]): Graph = {
-    unionGraph(computeRetaggings(graphs.map(g => g -> g.tags)).toList)
-  }
+  def prefixedGraph(graph: RelationalCypherGraph[T], prefix: GraphIdPrefix)(implicit context: RelationalRuntimeContext[T]): Graph =
+    PrefixedGraph(graph, prefix)
 
-  def unionGraph(graphsToReplacements: List[(RelationalCypherGraph[T], Map[Int, Int])])
-    (implicit context: RelationalRuntimeContext[T]): Graph = UnionGraph(graphsToReplacements)
+  def unionGraph(graphs: RelationalCypherGraph[T]*)(implicit context: RelationalRuntimeContext[T]): Graph =
+    UnionGraph(graphs.toList)
 
   def empty: Graph = EmptyGraph()
 
-  def create(nodeTable: NodeTable[T], entityTables: EntityTable[T]*): Graph = {
-    create(Set(0), None, nodeTable +: entityTables: _*)
+  def create(nodeTable: EntityTable[T], entityTables: EntityTable[T]*): Graph = {
+    create(None, nodeTable +: entityTables: _*)
   }
 
-  def create(maybeSchema: Option[Schema], nodeTable: NodeTable[T], entityTables: EntityTable[T]*): Graph = {
-    create(Set(0), maybeSchema, nodeTable +: entityTables: _*)
+  def create(maybeSchema: Option[Schema], nodeTable: EntityTable[T], entityTables: EntityTable[T]*): Graph = {
+    create(maybeSchema, nodeTable +: entityTables: _*)
   }
 
   def create(
-    tags: Set[Int],
     maybeSchema: Option[Schema],
     entityTables: EntityTable[T]*
   ): Graph = {
     implicit val runtimeContext: RelationalRuntimeContext[T] = session.basicRuntimeContext()
     val allTables = entityTables
     val schema = maybeSchema.getOrElse(allTables.map(_.schema).reduce[Schema](_ ++ _))
-    new ScanGraph(allTables, schema, tags)
+    new ScanGraph(allTables, schema)
   }
 }
 
@@ -87,8 +89,6 @@ trait RelationalCypherGraph[T <: Table[T]] extends PropertyGraph {
 
   private[opencypher] implicit def tableTypeTag: TypeTag[T] = session.tableTypeTag
 
-  def tags: Set[Int]
-
   def cache(): RelationalCypherGraph[T] = {
     tables.foreach(_.cache())
     this
@@ -96,22 +96,33 @@ trait RelationalCypherGraph[T <: Table[T]] extends PropertyGraph {
 
   def tables: Seq[T]
 
-  def scanOperator(entityType: CypherType, exactLabelMatch: Boolean = false): RelationalOperator[T]
+  def scanOperator(searchPattern: Pattern, exactLabelMatch: Boolean = false): RelationalOperator[T]
+
+  override def cypher(
+    query: String,
+    parameters: CypherValue.CypherMap,
+    drivingTable: Option[CypherRecords],
+    queryCatalog: Map[QualifiedGraphName, PropertyGraph]
+  ): RelationalCypherResult[T] = session.cypherOnGraph(this, query, parameters, drivingTable, queryCatalog)
 
   override def nodes(name: String, nodeCypherType: CTNode, exactLabelMatch: Boolean = false): RelationalCypherRecords[T] = {
-    val scan = scanOperator(nodeCypherType, exactLabelMatch)
-    val namedScan = scan.assignScanName(name)
+    val pattern = NodePattern(nodeCypherType)
+    val scan = scanOperator(pattern, exactLabelMatch)
+    val nodeVar = NodeVar(name)(nodeCypherType)
+    val namedScan = Select(scan.assignScanName(Map(pattern.nodeEntity.toVar -> nodeVar)), List(nodeVar)).alignColumnsWithReturnItems
     session.records.from(namedScan.header, namedScan.table)
   }
 
   override def relationships(name: String, relCypherType: CTRelationship): RelationalCypherRecords[T] = {
-    val scan = scanOperator(relCypherType)
-    val namedScan = scan.assignScanName(name)
+    val pattern = RelationshipPattern(relCypherType)
+    val scan = scanOperator(pattern)
+    val relVar = RelationshipVar(name)(relCypherType)
+    val namedScan = Select(scan.assignScanName(Map(pattern.relEntity.toVar -> relVar)), List(relVar)).alignColumnsWithReturnItems
     session.records.from(namedScan.header, namedScan.table)
   }
 
-  def unionAll(others: PropertyGraph*): RelationalCypherGraph[T] = {
-    val graphs = (this +: others).map {
+  override def unionAll(others: PropertyGraph*): RelationalCypherGraph[T] = {
+    val otherGraphs: List[RelationalCypherGraph[T]] = others.toList.map {
       case g: RelationalCypherGraph[T] => g
       case _ => throw UnsupportedOperationException("Union all only works on relational graphs")
     }
@@ -121,7 +132,9 @@ trait RelationalCypherGraph[T <: Table[T]] extends PropertyGraph {
       case g: RelationalCypherGraph[_] => g.asInstanceOf[RelationalCypherGraph[T]]
     })
 
-    val context = RelationalRuntimeContext(graphAt)(session)
-    session.graphs.unionGraph(graphs: _*)(context)
+    implicit val context: RelationalRuntimeContext[T] = RelationalRuntimeContext(graphAt)(session)
+
+    val allGraphs = (this :: otherGraphs).zipWithIndex.map { case (g, i) => session.graphs.prefixedGraph(g, i.toByte) }
+    session.graphs.unionGraph(allGraphs: _*)
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,26 +29,28 @@ package org.opencypher.spark.examples
 
 import org.opencypher.okapi.api.graph.{Namespace, QualifiedGraphName}
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
-import org.opencypher.okapi.neo4j.io.testing.Neo4jHarnessUtils._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jTestUtils._
 import org.opencypher.spark.api.io.neo4j.sync.Neo4jGraphMerge
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.testing.support.creation.CAPSNeo4jHarnessUtils._
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * Demonstrates connecting a graph from a CSV data source with a graph from a Neo4j data source.
   *
   * Writes updates back to the Neo4j database with Cypher queries.
   */
-object Neo4jWorkflowExample extends ConsoleApp {
+object Neo4jWorkflowExample extends App {
   // Create CAPS session
   implicit val session: CAPSSession = CAPSSession.local()
 
-  // Start a Neo4j instance and populate it with social network data
-  val neo4j = startNeo4j(personNetwork).withSchemaProcedure
+  // Connect to a Neo4j instance and populate it with social network data
+  // To run a test instance you may use
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStart
+  //  ./gradlew :okapi-neo4j-io-testing:neo4jStop
+  val neo4j = connectNeo4j(personNetwork)
 
   // Register Property Graph Data Sources (PGDS)
-  session.registerSource(Namespace("socialNetwork"), GraphSources.cypher.neo4j(neo4j.dataSourceConfig))
+  session.registerSource(Namespace("socialNetwork"), GraphSources.cypher.neo4j(neo4j.config))
   session.registerSource(Namespace("purchases"), GraphSources.fs(rootPath = getClass.getResource("/fs-graphsource/csv").getFile).csv)
 
   // Access the graphs via their qualified graph names
@@ -86,10 +88,10 @@ object Neo4jWorkflowExample extends ConsoleApp {
   val nodeKeys = Map("Person" -> Set("name"), "Product" -> Set("title"))
 
   // Write the recommendations back to Neo4j
-  Neo4jGraphMerge.merge(entireGraphName, recommendationGraph, neo4j.dataSourceConfig, Some(nodeKeys))
+  Neo4jGraphMerge.merge(entireGraphName, recommendationGraph, neo4j.config, Some(nodeKeys))
 
   // Proof that the write-back to Neo4j worked, retrieve and print updated Neo4j results
-  val updatedNeo4jSource = GraphSources.cypher.neo4j(neo4j.dataSourceConfig)
+  val updatedNeo4jSource = GraphSources.cypher.neo4j(neo4j.config)
   session.registerSource(Namespace("updated-neo4j"), updatedNeo4jSource)
   val socialNetworkWithRanks = session.catalog.graph(QualifiedGraphName(Namespace("updated-neo4j"), entireGraphName))
   socialNetworkWithRanks.cypher(
@@ -97,8 +99,8 @@ object Neo4jWorkflowExample extends ConsoleApp {
       |RETURN person.name AS person, product.title AS should_buy
       |ORDER BY person, should_buy""".stripMargin).show
 
-  // Shutdown Neo4j test instance
-  neo4j.stop()
+  // Clear Neo4j test instance and close session / driver
+  neo4j.close()
 
   def personNetwork =
     s"""|CREATE (a:Person { name: 'Alice', age: 10 })

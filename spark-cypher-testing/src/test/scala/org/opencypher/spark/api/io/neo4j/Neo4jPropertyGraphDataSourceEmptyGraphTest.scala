@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ package org.opencypher.spark.api.io.neo4j
 
 import org.opencypher.okapi.api.value.CypherValue.CypherMap
 import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
+import org.opencypher.okapi.neo4j.io.testing.Neo4jServerFixture
 import org.opencypher.okapi.testing.Bag
 import org.opencypher.spark.testing.CAPSTestSuite
-import org.opencypher.spark.testing.fixture.CAPSNeo4jServerFixture
 
-class Neo4jPropertyGraphDataSourceEmptyGraphTest extends CAPSTestSuite with CAPSNeo4jServerFixture {
+class Neo4jPropertyGraphDataSourceEmptyGraphTest extends CAPSTestSuite with Neo4jServerFixture {
 
   override def dataFixture: String = ""
 
@@ -49,5 +49,4 @@ class Neo4jPropertyGraphDataSourceEmptyGraphTest extends CAPSTestSuite with CAPS
       CypherMap("count" -> 0)
     ))
   }
-
 }

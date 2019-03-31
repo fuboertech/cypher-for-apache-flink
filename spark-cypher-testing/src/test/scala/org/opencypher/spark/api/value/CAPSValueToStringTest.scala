@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,18 +26,19 @@
  */
 package org.opencypher.spark.api.value
 
+import org.opencypher.okapi.api.value.CypherValue.Format._
 import org.opencypher.okapi.api.value.CypherValue._
 import org.opencypher.okapi.testing.BaseTestSuite
 
 class CAPSValueToStringTest extends BaseTestSuite {
 
   test("node") {
-    CAPSNode(1L, Set.empty, CypherMap.empty).toCypherString should equal("()")
+    CAPSNode(1L, Set.empty[String], CypherMap.empty).toCypherString should equal("()")
     CAPSNode(1L, Set("A"), CypherMap.empty).toCypherString should equal("(:`A`)")
     CAPSNode(1L, Set("A", "B"), CypherMap.empty).toCypherString should equal("(:`A`:`B`)")
     CAPSNode(1L, Set("A", "B"), CypherMap("a" -> "b")).toCypherString should equal("(:`A`:`B` {`a`: 'b'})")
     CAPSNode(1L, Set("A", "B"), CypherMap("a" -> "b", "b" -> 1)).toCypherString should equal("(:`A`:`B` {`a`: 'b', `b`: 1})")
-    CAPSNode(1L, Set.empty, CypherMap("a" -> "b", "b" -> 1)).toCypherString should equal("({`a`: 'b', `b`: 1})")
+    CAPSNode(1L, Set.empty[String], CypherMap("a" -> "b", "b" -> 1)).toCypherString should equal("({`a`: 'b', `b`: 1})")
   }
 
   test("relationship") {

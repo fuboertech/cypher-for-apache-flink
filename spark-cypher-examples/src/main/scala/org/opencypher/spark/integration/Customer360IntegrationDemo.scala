@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import org.opencypher.okapi.neo4j.io.MetaLabelSupport._
 import org.opencypher.okapi.neo4j.io.Neo4jConfig
 import org.opencypher.spark.api.io.neo4j.sync.Neo4jGraphMerge
 import org.opencypher.spark.api.{CAPSSession, GraphSources}
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * This demo shows the transformation from a single CSV file into a PropertyGraph that is eventually stored in Neo4j.
@@ -50,7 +50,7 @@ import org.opencypher.spark.util.ConsoleApp
   *
   * This integration demo requires a running Neo4j Enterprise installation listening on bolt://localhost:7687.
   */
-object Customer360IntegrationDemo extends ConsoleApp {
+object Customer360IntegrationDemo extends App {
 
   implicit val resourceFolder: String = "/customer-interactions"
 

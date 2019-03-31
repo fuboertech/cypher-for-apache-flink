@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,9 @@
 package org.opencypher.spark.api.io.neo4j
 
 import org.apache.logging.log4j.scala.Logging
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{BinaryType, LongType, StructType}
 import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.unsafe.types.CalendarInterval
 import org.neo4j.driver.v1.{Value, Values}
 import org.opencypher.okapi.api.graph.{GraphName, PropertyGraph}
 import org.opencypher.okapi.api.schema.LabelPropertyMap._
@@ -45,10 +46,15 @@ import org.opencypher.okapi.neo4j.io.{EntityReader, EntityWriter, Neo4jConfig}
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.impl.CAPSConverters._
 import org.opencypher.spark.impl.CAPSRecords
+import org.opencypher.spark.impl.convert.SparkConversions._
+import org.opencypher.spark.impl.expressions.EncodeLong._
 import org.opencypher.spark.impl.io.neo4j.external.Neo4j
+import org.opencypher.spark.impl.table.SparkTable._
+import org.opencypher.spark.impl.temporal.SparkTemporalHelpers._
 import org.opencypher.spark.schema.CAPSSchema
 import org.opencypher.spark.schema.CAPSSchema._
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -67,7 +73,7 @@ case class Neo4jPropertyGraphDataSource(
   }
 
   override protected def listGraphNames: List[String] = {
-    val labelResult = config.cypher(
+    val labelResult = config.cypherWithNewSession(
       """|CALL db.labels()
          |YIELD label
          |RETURN collect(label) AS labels
@@ -86,7 +92,7 @@ case class Neo4jPropertyGraphDataSource(
     maybeSchema.getOrElse(super.readSchema(entireGraphName))
   }
 
-  override protected def readSchema(graphName: GraphName): CAPSSchema = {
+  override protected[io] def readSchema(graphName: GraphName): CAPSSchema = {
     val filteredSchema = graphName.metaLabel match {
       case None =>
         entireGraphSchema
@@ -110,7 +116,10 @@ case class Neo4jPropertyGraphDataSource(
     val neo4jConnection = Neo4j(config, caps.sparkSession)
     val rdd = neo4jConnection.cypher(flatQuery).loadRowRdd
 
-    caps.sparkSession.createDataFrame(rdd, sparkSchema)
+    // encode Neo4j identifiers to BinaryType
+    caps.sparkSession
+      .createDataFrame(rdd, sparkSchema.convertTypes(BinaryType, LongType))
+      .transformColumns(idPropertyKey)(_.encodeLongAsCAPSId)
   }
 
   override protected def readRelationshipTable(
@@ -123,7 +132,11 @@ case class Neo4jPropertyGraphDataSource(
 
     val neo4jConnection = Neo4j(config, caps.sparkSession)
     val rdd = neo4jConnection.cypher(flatQuery).loadRowRdd
-    caps.sparkSession.createDataFrame(rdd, sparkSchema)
+
+    // encode Neo4j identifiers to BinaryType
+    caps.sparkSession
+      .createDataFrame(rdd, sparkSchema.convertTypes(BinaryType, LongType))
+      .transformColumns(idPropertyKey, startIdPropertyKey, endIdPropertyKey)(_.encodeLongAsCAPSId)
   }
 
   override protected def deleteGraph(graphName: GraphName): Unit = {
@@ -177,8 +190,9 @@ case object Writers {
       val mapping = computeMapping(nodeScan)
       nodeScan
         .df
+        .encodeBinaryToHexString
         .rdd
-        .foreachPartitionAsync{ i =>
+        .foreachPartitionAsync { i =>
           if (i.nonEmpty) EntityWriter.createNodes(i, mapping, config, combo + metaLabel)(rowToListValue)
         }
     }
@@ -202,6 +216,7 @@ case object Writers {
 
       relScan
         .df
+        .encodeBinaryToHexString
         .rdd
         .foreachPartitionAsync { i =>
           if (i.nonEmpty) {
@@ -220,10 +235,18 @@ case object Writers {
   }
 
   private def rowToListValue(row: Row): Value = {
+    def castValue(v: Any): Any = v match {
+      case a: mutable.WrappedArray[_] => a.array.map(o => castValue(o))
+      case d: java.sql.Date => d.toLocalDate
+      case ts: java.sql.Timestamp => ts.toLocalDateTime
+      case ci: CalendarInterval => ci.toJavaDuration
+      case other => other
+    }
+
     val array = new Array[Value](row.size)
     var i = 0
     while (i < row.size) {
-      array(i) = Values.value(row.get(i))
+      array(i) = Values.value(castValue(row.get(i)))
       i += 1
     }
     Values.value(array: _*)

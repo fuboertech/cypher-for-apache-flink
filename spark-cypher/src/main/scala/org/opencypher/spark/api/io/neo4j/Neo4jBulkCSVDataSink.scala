@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
  */
 package org.opencypher.spark.api.io.neo4j
 
+import org.apache.spark.sql.execution.datasources.csv.CSVDataSource
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, functions}
 import org.opencypher.okapi.api.graph.{GraphName, PropertyGraph}
@@ -33,10 +34,10 @@ import org.opencypher.okapi.impl.exception.{IllegalArgumentException, Unsupporte
 import org.opencypher.okapi.impl.util.StringEncodingUtilities._
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.api.io.fs.DefaultGraphDirectoryStructure._
-import org.opencypher.spark.api.io.fs.FSGraphSource
+import org.opencypher.spark.api.io.fs.{CsvGraphSource, FSGraphSource}
 import org.opencypher.spark.api.io.fs.HadoopFSHelpers._
 import org.opencypher.spark.api.io.neo4j.Neo4jBulkCSVDataSink._
-import org.opencypher.spark.api.io.{CsvFormat, GraphEntity, Relationship}
+import org.opencypher.spark.api.io.{FileFormat, GraphEntity, Relationship}
 import org.opencypher.spark.schema.CAPSSchema
 
 object Neo4jBulkCSVDataSink {
@@ -89,7 +90,7 @@ object Neo4jBulkCSVDataSink {
   * @param session        CAPS session
   */
 class Neo4jBulkCSVDataSink(override val rootPath: String, arrayDelimiter: String = "|")(implicit session: CAPSSession)
-  extends FSGraphSource(rootPath, CsvFormat) {
+  extends CsvGraphSource(rootPath) {
 
   override protected def writeSchema(
     graphName: GraphName,

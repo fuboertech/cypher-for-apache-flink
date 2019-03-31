@@ -1,0 +1,67 @@
+[[backend-sql]]
+= SQL
+
+[abstract]
+--
+This section describes the SQL backend and GraphDDL.
+--
+
+
+[[backend-sql-pgds]]
+== SQL PGDS
+
+The most powerful PGDS is the SQL PGDS.
+It allows the extraction of graphs from any system that understands SQL.
+In particular, Hive and JDBC are the two interfaces used.
+
+The SQL PGDS is configured using a JSON file which contains parameters necessary to connect across JDBC or to Hive.
+
+.Example SQL PGDS configuration
+====
+
+[source, scala]
+----
+include::{snippets-dir}/SqlPGDS.scala[tags=create-sql-pgds]
+----
+
+This example creates a SQL PGDS configured to read both from Hive and from an embedded H2 SQL database.
+
+====
+
+The graphs that a SQL PGDS stores are defined by their Graph DDL, which expresses graph schema and mappings from views and tables available in the configured data sources.
+
+.Graph DDL example (located at /path/to/my/Graph.ddl)
+====
+
+[source, "graph ddl"]
+----
+include::{snippets-res-dir}/SqlPGDS.ddl[tags=full-example]
+----
+
+The above Graph DDL requires two tables (with columns): `view_KNOWS (start_id, end_id, since)` and `view_Persons (id, name)` to be present in the catalog of `myH2Source.myH2Schema` (the `myH2Schema` schema of the H2 database).
+
+====
+
+
+[[backend-sql-pgds-tables]]
+=== Tables and columns
+
+The referenced tables are required to contain all the columns referenced in the Graph DDL.
+The tables may contain additional columns not referenced in the Graph DDL.
+Such additional columns will not be selected.
+
+Mappings are not case sensitive.
+A table `person(NAME varchar, AGE bigint, HOMETOWN varchar)` can be mapped into a label `(Person {name: STRING, age: INTEGER, homeTown: String})`.
+The resulting graph will follow the case specified in the schema.
+Cypher is case sensitive.
+To query a graph created with this mapping, the label and property names used in the query must match the case in the graph:
+
+[source, cypher]
+----
+MATCH (p:Person)
+WHERE p.name = 'Tobias' AND p.homeTown = 'Malmö'
+RETURN avg(p.age)
+----
+
+include::backend-sql-graphddl.adoc[leveloffset=+1]
+

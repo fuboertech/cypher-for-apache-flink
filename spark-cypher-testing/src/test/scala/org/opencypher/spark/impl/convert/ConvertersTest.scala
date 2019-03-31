@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class ConvertersTest extends BaseTestSuite {
       BooleanType -> CTBoolean,
       ArrayType(LongType, containsNull = false) -> CTList(CTInteger),
       ArrayType(StringType, containsNull = true) -> CTList(CTString.nullable),
-      BinaryType -> CTAny
+      BinaryType -> CTIdentity
     )
 
     mappings.foreach {
@@ -69,10 +69,10 @@ class ConvertersTest extends BaseTestSuite {
       CTBoolean -> BooleanType,
       CTList(CTInteger) -> ArrayType(LongType, containsNull = false),
       CTList(CTString.nullable) -> ArrayType(StringType, containsNull = true),
-      CTNode -> LongType,
-      CTNode("Foo") -> LongType,
-      CTRelationship -> LongType,
-      CTRelationship("BAR") -> LongType
+      CTNode -> BinaryType,
+      CTNode("Foo") -> BinaryType,
+      CTRelationship -> BinaryType,
+      CTRelationship("BAR") -> BinaryType
     )
 
     mappings.foreach {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,10 @@ case class InMemoryTestNode(
   override def copy(id: Long = id, labels: Set[String] = labels, properties: CypherMap = properties): InMemoryTestNode.this.type = {
     InMemoryTestNode(id, labels, properties).asInstanceOf[this.type]
   }
+
+  def equalsSemantically(other: I): Boolean = {
+    this.labels == other.labels && this.properties == other.properties
+  }
 }
 
 case class InMemoryTestRelationship(
@@ -80,6 +84,10 @@ case class InMemoryTestRelationship(
 
   override def copy(id: Long = id, source: Long = startId, target: Long = endId, relType: String = relType, properties: CypherMap = properties): InMemoryTestRelationship.this.type = {
     InMemoryTestRelationship(id, source, target, relType, properties).asInstanceOf[this.type]
+  }
+
+  def equalsSemantically(other: I): Boolean = {
+    this.relType == other.relType && this.properties == other.properties
   }
 
 }

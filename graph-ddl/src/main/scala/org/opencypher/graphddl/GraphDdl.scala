@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,15 @@
  */
 package org.opencypher.graphddl
 
+import cats.instances.map._
+import cats.syntax.semigroup._
 import org.opencypher.graphddl.GraphDdl._
-import org.opencypher.graphddl.GraphDdlAst.{ColumnIdentifier, PropertyToColumnMappingDefinition}
+import org.opencypher.graphddl.GraphDdlAst.{ColumnIdentifier, KeyDefinition, PropertyToColumnMappingDefinition}
 import org.opencypher.graphddl.GraphDdlException._
 import org.opencypher.okapi.api.graph.GraphName
+import org.opencypher.okapi.api.schema.PropertyKeys
 import org.opencypher.okapi.api.schema.PropertyKeys.PropertyKeys
-import org.opencypher.okapi.api.schema.{PropertyKeys, Schema, SchemaPattern}
-import org.opencypher.okapi.impl.util.ScalaUtils._
+import org.opencypher.okapi.api.types.CypherType
 
 import scala.language.higherKinds
 
@@ -41,28 +43,32 @@ object GraphDdl {
   type PropertyMappings = Map[String, String]
 
   def apply(ddl: String): GraphDdl =
-    GraphDdl(GraphDdlParser.parse(ddl))
+    GraphDdl(GraphDdlParser.parseDdl(ddl))
 
   def apply(ddl: DdlDefinition): GraphDdl = {
 
     val ddlParts = DdlParts(ddl.statements)
 
-    val global = GraphType.empty.push(ddlParts.elementTypes)
+    val global = PartialGraphType.empty.push(name = "global", statements = ddlParts.elementTypes)
 
     val graphTypes = ddlParts.graphTypes
       .keyBy(_.name)
-      .mapValues { graphType => tryWithGraphType(graphType.name) {
-        global.push(graphType.statements)
-      }}
+      .mapValues { graphType =>
+        tryWithGraphType(graphType.name) {
+          global.push(graphType.name, graphType.statements)
+        }
+      }
       .view.force
 
     val graphs = ddlParts.graphs
-      .map { graph => tryWithGraph(graph.definition.name) {
-        val graphType = graph.definition.maybeGraphTypeName
-          .map(name => graphTypes.getOrFail(name, "Unresolved graph type"))
-          .getOrElse(global)
-        toGraph(graphType, graph)
-      }}
+      .map { graph =>
+        tryWithGraph(graph.definition.name) {
+          val graphType = graph.definition.maybeGraphTypeName
+            .map(name => graphTypes.getOrFail(name, "Unresolved graph type"))
+            .getOrElse(global)
+          toGraph(graphType, graph)
+        }
+      }
       .keyBy(_.name)
 
     GraphDdl(
@@ -76,10 +82,10 @@ object GraphDdl {
 
     def apply(statements: List[DdlStatement]): DdlParts = {
       val result = statements.foldLeft(DdlParts.empty) {
-        case (parts, s: SetSchemaDefinition)   => parts.copy(maybeSetSchema = Some(s))
+        case (parts, s: SetSchemaDefinition) => parts.copy(maybeSetSchema = Some(s))
         case (parts, s: ElementTypeDefinition) => parts.copy(elementTypes = parts.elementTypes :+ s)
-        case (parts, s: GraphTypeDefinition)   => parts.copy(graphTypes = parts.graphTypes :+ s)
-        case (parts, s: GraphDefinition)       => parts.copy(graphs = parts.graphs :+ GraphDefinitionWithContext(s, parts.maybeSetSchema))
+        case (parts, s: GraphTypeDefinition) => parts.copy(graphTypes = parts.graphTypes :+ s)
+        case (parts, s: GraphDefinition) => parts.copy(graphs = parts.graphs :+ GraphDefinitionWithContext(s, parts.maybeSetSchema))
       }
       result.elementTypes.validateDistinctBy(_.name, "Duplicate element type")
       result.graphTypes.validateDistinctBy(_.name, "Duplicate graph type")
@@ -101,13 +107,11 @@ object GraphDdl {
 
     def apply(statements: List[GraphTypeStatement]): GraphTypeParts = {
       val result = statements.foldLeft(GraphTypeParts.empty) {
-        case (parts, s: ElementTypeDefinition)      => parts.copy(elementTypes = parts.elementTypes :+ s)
-        case (parts, s: NodeTypeDefinition)         => parts.copy(nodeTypes = parts.nodeTypes :+ s)
+        case (parts, s: ElementTypeDefinition) => parts.copy(elementTypes = parts.elementTypes :+ s)
+        case (parts, s: NodeTypeDefinition) => parts.copy(nodeTypes = parts.nodeTypes :+ s)
         case (parts, s: RelationshipTypeDefinition) => parts.copy(relTypes = parts.relTypes :+ s)
       }
       result.elementTypes.validateDistinctBy(_.name, "Duplicate element type")
-      result.nodeTypes.validateDistinctBy(identity, "Duplicate node type")
-      result.relTypes.validateDistinctBy(identity, "Duplicate relationship type")
       result
     }
   }
@@ -124,8 +128,8 @@ object GraphDdl {
 
     def apply(mappings: List[GraphStatement]): GraphParts =
       mappings.foldLeft(GraphParts.empty) {
-        case (parts, s: GraphTypeStatement)            => parts.copy(graphTypeStatements = parts.graphTypeStatements :+ s)
-        case (parts, s: NodeMappingDefinition)         => parts.copy(nodeMappings = parts.nodeMappings :+ s)
+        case (parts, s: GraphTypeStatement) => parts.copy(graphTypeStatements = parts.graphTypeStatements :+ s)
+        case (parts, s: NodeMappingDefinition) => parts.copy(nodeMappings = parts.nodeMappings :+ s)
         case (parts, s: RelationshipMappingDefinition) => parts.copy(relMappings = parts.relMappings :+ s)
       }
   }
@@ -141,76 +145,90 @@ object GraphDdl {
     maybeSetSchema: Option[SetSchemaDefinition] = None
   )
 
-  object GraphType {
-    val empty: GraphType = GraphType()
+  object PartialGraphType {
+    val empty: PartialGraphType = PartialGraphType(name = "empty")
   }
 
-  private[graphddl] case class GraphType(
-    parent: Option[GraphType] = None,
+  private[graphddl] case class PartialGraphType(
+    parent: Option[PartialGraphType] = None,
+    name: String,
     elementTypes: Map[String, ElementTypeDefinition] = Map.empty,
-    nodeTypes: Map[Set[String], PropertyKeys] = Map.empty,
-    edgeTypes: Map[String, PropertyKeys] = Map.empty,
-    patterns: Set[SchemaPattern] = Set.empty
+    nodeTypes: Map[NodeTypeDefinition, PropertyKeys] = Map.empty,
+    edgeTypes: Map[RelationshipTypeDefinition, PropertyKeys] = Map.empty
   ) {
     lazy val allElementTypes: Map[String, ElementTypeDefinition] =
       parent.map(_.allElementTypes).getOrElse(Map.empty) ++ elementTypes
 
-    lazy val allNodeTypes: Map[Set[String], PropertyKeys] =
+    lazy val allNodeTypes: Map[NodeTypeDefinition, PropertyKeys] =
       parent.map(_.allNodeTypes).getOrElse(Map.empty) ++ nodeTypes
 
-    lazy val allEdgeTypes: Map[String, PropertyKeys] =
+    lazy val allEdgeTypes: Map[RelationshipTypeDefinition, PropertyKeys] =
       parent.map(_.allEdgeTypes).getOrElse(Map.empty) ++ edgeTypes
 
-    lazy val allPatterns: Set[SchemaPattern] =
-      parent.map(_.allPatterns).getOrElse(Set.empty) ++ patterns
-
-    lazy val asOkapiSchema: Schema = Schema.empty
-      .foldLeftOver(allNodeTypes) { case (schema, (labels, properties)) =>
-        schema.withNodePropertyKeys(labels, properties)
-      }
-      .foldLeftOver(allNodeTypes.keySet.flatten.map(resolveElementType)) { case (schema, eType) =>
-        eType.maybeKey.fold(schema)(key => schema.withNodeKey(eType.name, key._2))
-      }
-      .foldLeftOver(allEdgeTypes) { case (schema, (label, properties)) =>
-        schema.withRelationshipPropertyKeys(label, properties)
-      }
-      .foldLeftOver(allEdgeTypes.keySet.map(resolveElementType)) { case (schema, eType) =>
-        eType.maybeKey.fold(schema)(key => schema.withNodeKey(eType.name, key._2))
-      }
-      .withSchemaPatterns(allPatterns.toSeq: _*)
-
     /** Validates, resolves and pushes the statements to form a child GraphType */
-    def push(statements: List[GraphTypeStatement]): GraphType = {
+    def push(name: String, statements: List[GraphTypeStatement]): PartialGraphType = {
       val parts = GraphTypeParts(statements)
 
-      val local = GraphType(Some(this), parts.elementTypes.keyBy(_.name))
+      val local = PartialGraphType(Some(this), name, parts.elementTypes.keyBy(_.name))
 
-      GraphType(
+      PartialGraphType(
         parent = Some(this),
-
+        name,
         elementTypes = local.elementTypes,
-
-        nodeTypes = Set(
-          parts.nodeTypes.map(_.elementTypes),
-          parts.relTypes.map(_.sourceNodeType.elementTypes),
-          parts.relTypes.map(_.targetNodeType.elementTypes)
-        ).flatten.map(labels => labels -> tryWithNode(labels)(
-          mergeProperties(labels.map(local.resolveElementType))
-        )).toMap,
-
-        edgeTypes = Set(
-          parts.relTypes.map(_.elementType)
-        ).flatten.map(label => label -> tryWithRel(label)(
-          mergeProperties(Set(local.resolveElementType(label)))
-        )).toMap,
-
-        patterns = parts.relTypes.map(relType => SchemaPattern(
-          relType.sourceNodeType.elementTypes,
-          relType.elementType,
-          relType.targetNodeType.elementTypes
-        )).toSet
+        nodeTypes = resolveNodeTypes(parts, local),
+        edgeTypes = resolveRelationshipTypes(parts, local)
       )
     }
+
+    def toGraphType: GraphType = GraphType(name,
+      allElementTypes.values.toSet.map { elementTypeDef: ElementTypeDefinition => toElementType(elementTypeDef) },
+      allNodeTypes.map { case (nodeTypeDef, _) => toNodeType(nodeTypeDef) }.toSet,
+      allEdgeTypes.map { case (relTypeDef, _) => toRelType(relTypeDef) }.toSet)
+
+    def toElementType(elementTypeDefinition: ElementTypeDefinition): ElementType = {
+      val parentTypes = elementTypeDefinition.parents.map(resolveElementType).map(toElementType).map(_.name)
+      ElementType(elementTypeDefinition.name, parentTypes, elementTypeDefinition.properties, elementTypeDefinition.maybeKey)
+    }
+
+    def toNodeType(nodeTypeDefinition: NodeTypeDefinition): NodeType =
+      NodeType(resolveNodeLabels(nodeTypeDefinition))
+
+    def toRelType(relationshipTypeDefinition: RelationshipTypeDefinition): RelationshipType =
+      RelationshipType(
+        startNodeType = toNodeType(relationshipTypeDefinition.startNodeType),
+        labels = resolveRelationshipLabel(relationshipTypeDefinition),
+        endNodeType = toNodeType(relationshipTypeDefinition.endNodeType))
+
+    private def resolveNodeTypes(
+      parts: GraphTypeParts,
+      local: PartialGraphType
+    ): Map[NodeTypeDefinition, PropertyKeys] = {
+      parts.nodeTypes
+        .map(nodeType => NodeTypeDefinition(local.resolveNodeLabels(nodeType)))
+        .validateDistinctBy(identity, "Duplicate node type")
+        .map(nodeType => nodeType -> tryWithNode(nodeType)(mergeProperties(nodeType.elementTypes.flatMap(local.resolveElementTypes))))
+        .toMap
+    }
+
+    private def resolveRelationshipTypes(
+      parts: GraphTypeParts,
+      local: PartialGraphType
+    ): Map[RelationshipTypeDefinition, PropertyKeys] = {
+      parts.relTypes
+        .map(relType => RelationshipTypeDefinition(
+          startNodeType = NodeTypeDefinition(elementTypes = local.resolveNodeLabels(relType.startNodeType)),
+          elementTypes = local.resolveRelationshipLabel(relType),
+          endNodeType = NodeTypeDefinition(elementTypes = local.resolveNodeLabels(relType.endNodeType))))
+        .validateDistinctBy(identity, "Duplicate relationship type")
+        .map(relType => relType -> tryWithRel(relType)(mergeProperties(relType.elementTypes.flatMap(local.resolveElementTypes))))
+        .toMap
+    }
+
+    private def resolveNodeLabels(nodeTypeDefinition: NodeTypeDefinition): Set[String] =
+      tryWithNode(nodeTypeDefinition)(nodeTypeDefinition.elementTypes.flatMap(resolveElementTypes).map(_.name))
+
+    private def resolveRelationshipLabel(relTypeDefinition: RelationshipTypeDefinition): Set[String] =
+      tryWithRel(relTypeDefinition)(relTypeDefinition.elementTypes.flatMap(resolveElementTypes).map(_.name))
 
     private def mergeProperties(elementTypes: Set[ElementTypeDefinition]): PropertyKeys = {
       elementTypes
@@ -218,54 +236,87 @@ object GraphDdl {
         .foldLeft(PropertyKeys.empty) { case (props, (name, cypherType)) =>
           props.get(name).filter(_ != cypherType) match {
             case Some(t) => incompatibleTypes(name, cypherType, t)
-            case None    => props.updated(name, cypherType)
+            case None => props.updated(name, cypherType)
           }
         }
     }
 
+    private def resolveElementTypes(name: String): Set[ElementTypeDefinition] = {
+      val elementType = resolveElementType(name)
+      detectCircularDependency(elementType)
+      resolveParents(elementType)
+    }
+
     private def resolveElementType(name: String): ElementTypeDefinition =
       allElementTypes.getOrElse(name, unresolved(s"Unresolved element type", name))
+
+    private def resolveParents(node: ElementTypeDefinition): Set[ElementTypeDefinition] =
+      node.parents.map(resolveElementType).flatMap(resolveParents) + node
+
+    private def detectCircularDependency(node: ElementTypeDefinition): Unit = {
+      def traverse(node: ElementTypeDefinition, path: List[ElementTypeDefinition]): Unit = {
+        node.parents.foreach { p =>
+          val parentElementType = allElementTypes.getOrElse(p, unresolved(s"Unresolved element type", p))
+          if (path.contains(parentElementType)) {
+            illegalInheritance("Circular dependency detected", (path.map(_.name) :+ p).mkString(" -> "))
+          }
+          traverse(parentElementType, path :+ parentElementType)
+        }
+      }
+
+      traverse(node, List(node))
+    }
   }
 
   private def toGraph(
-    parent: GraphType,
+    parent: PartialGraphType,
     graph: GraphDefinitionWithContext
   ): Graph = {
     val parts = GraphParts(graph.definition.statements)
-    val graphType = parent
-      .push(parts.graphTypeStatements)
-      .push(parts.nodeMappings.map(_.nodeType) ++ parts.relMappings.map(_.relType))
+    val graphTypeName = graph.definition.maybeGraphTypeName.getOrElse(graph.definition.name)
+    val partialGraphType = parent
+      .push(graphTypeName, parts.graphTypeStatements)
+      .push(graphTypeName, parts.nodeMappings.map(_.nodeType) ++ parts.relMappings.map(_.relType))
+    val graphType = partialGraphType.toGraphType
 
-    Graph(
+    val g = Graph(
       name = GraphName(graph.definition.name),
-      graphType = graphType.asOkapiSchema,
+      graphType = graphType,
       nodeToViewMappings = parts.nodeMappings
-        .flatMap(nm => toNodeToViewMappings(graphType.asOkapiSchema, graph.maybeSetSchema, nm))
+        .flatMap(nmd => toNodeToViewMappings(partialGraphType.toNodeType(nmd.nodeType), graphType, graph.maybeSetSchema, nmd))
         .validateDistinctBy(_.key, "Duplicate node mapping")
         .keyBy(_.key),
       edgeToViewMappings = parts.relMappings
-        .flatMap(em => toEdgeToViewMappings(graphType.asOkapiSchema, graph.maybeSetSchema, em))
+        .flatMap(rmd => toEdgeToViewMappings(partialGraphType.toRelType(rmd.relType), graphType, graph.maybeSetSchema, rmd))
         .validateDistinctBy(_.key, "Duplicate relationship mapping")
     )
+
+    g.edgeToViewMappings.flatMap(evm => Seq(
+      evm.startNode.nodeViewKey -> evm.startNodeJoinColumns.toSet,
+      evm.endNode.nodeViewKey -> evm.endNodeJoinColumns.toSet
+    )).distinct
+      .validateDistinctBy({ case (nvk, _) => nvk }, msg = "Inconsistent join column definition", illegalConstraint)
+    g
   }
 
   private def toNodeToViewMappings(
-    graphType: Schema,
+    nodeType: NodeType,
+    graphType: GraphType,
     maybeSetSchema: Option[SetSchemaDefinition],
     nmd: NodeMappingDefinition
   ): Seq[NodeToViewMapping] = {
     nmd.nodeToView.map { nvd =>
       tryWithContext(s"Error in node mapping for: ${nmd.nodeType.elementTypes.mkString(",")}") {
 
-        val nodeKey = NodeViewKey(toNodeType(nmd.nodeType), toViewId(maybeSetSchema, nvd.viewId))
+        val nodeKey = NodeViewKey(nodeType, toViewId(maybeSetSchema, nvd.viewId))
 
         tryWithContext(s"Error in node mapping for: $nodeKey") {
           NodeToViewMapping(
             nodeType = nodeKey.nodeType,
             view = toViewId(maybeSetSchema, nvd.viewId),
             propertyMappings = toPropertyMappings(
-              elementTypes = nodeKey.nodeType.elementTypes,
-              graphTypePropertyKeys = graphType.nodePropertyKeys(nodeKey.nodeType.elementTypes).keySet,
+              elementTypes = nodeKey.nodeType.labels,
+              graphTypePropertyKeys = graphType.nodePropertyKeys(nodeKey.nodeType).keySet,
               maybePropertyMapping = nvd.maybePropertyMapping
             )
           )
@@ -275,14 +326,15 @@ object GraphDdl {
   }
 
   private def toEdgeToViewMappings(
-    graphType: Schema,
+    relType: RelationshipType,
+    graphType: GraphType,
     maybeSetSchema: Option[SetSchemaDefinition],
     rmd: RelationshipMappingDefinition
   ): Seq[EdgeToViewMapping] = {
     rmd.relTypeToView.map { rvd =>
       tryWithContext(s"Error in relationship mapping for: ${rmd.relType}") {
 
-        val edgeKey = EdgeViewKey(toRelType(rmd.relType), toViewId(maybeSetSchema, rvd.viewDef.viewId))
+        val edgeKey = EdgeViewKey(relType, toViewId(maybeSetSchema, rvd.viewDef.viewId))
 
         tryWithContext(s"Error in relationship mapping for: $edgeKey") {
           EdgeToViewMapping(
@@ -309,8 +361,8 @@ object GraphDdl {
               ))
             ),
             propertyMappings = toPropertyMappings(
-              elementTypes = Set(rmd.relType.elementType),
-              graphTypePropertyKeys = graphType.relationshipPropertyKeys(rmd.relType.elementType).keySet,
+              elementTypes = edgeKey.relType.labels,
+              graphTypePropertyKeys = graphType.relationshipPropertyKeys(edgeKey.relType).keySet,
               maybePropertyMapping = rvd.maybePropertyMapping
             )
           )
@@ -339,15 +391,6 @@ object GraphDdl {
     }
   }
 
-  private def toNodeType(nodeTypeDefinition: NodeTypeDefinition): NodeType =
-    NodeType(nodeTypeDefinition.elementTypes)
-
-  private def toRelType(relTypeDefinition: RelationshipTypeDefinition): RelationshipType =
-    RelationshipType(
-      startNodeType = toNodeType(relTypeDefinition.sourceNodeType),
-      elementType = relTypeDefinition.elementType,
-      endNodeType = toNodeType(relTypeDefinition.targetNodeType))
-
   private def toPropertyMappings(
     elementTypes: Set[String],
     graphTypePropertyKeys: Set[String],
@@ -371,20 +414,20 @@ object GraphDdl {
   private def tryWithGraph[T](name: String)(block: => T): T =
     tryWithContext(s"Error in graph: $name")(block)
 
-  private def tryWithNode[T](labels: Set[String])(block: => T): T =
-    tryWithContext(s"Error in node type: (${labels.mkString(",")})")(block)
+  private def tryWithNode[T](nodeTypeDefinition: NodeTypeDefinition)(block: => T): T =
+    tryWithContext(s"Error in node type: $nodeTypeDefinition")(block)
 
-  private def tryWithRel[T](label: String)(block: => T): T =
-    tryWithContext(s"Error in relationship type: [$label]")(block)
+  private def tryWithRel[T](relationshipTypeDefinition: RelationshipTypeDefinition)(block: => T): T =
+    tryWithContext(s"Error in relationship type: $relationshipTypeDefinition")(block)
 
   private implicit class TraversableOps[T, C[X] <: Traversable[X]](elems: C[T]) {
     def keyBy[K](key: T => K): Map[K, T] =
       elems.map(t => key(t) -> t).toMap
 
-    def validateDistinctBy[K](key: T => K, msg: String): C[T] = {
+    def validateDistinctBy[K](key: T => K, msg: String, error: (String, Any) => Nothing = duplicate): C[T] = {
       elems.groupBy(key).foreach {
-        case (k, values) if values.size > 1 => duplicate(msg, k)
-        case _                              =>
+        case (k, values) if values.size > 1 => error(msg, k)
+        case _ =>
       }
       elems
     }
@@ -397,35 +440,147 @@ object GraphDdl {
 
 // Result types
 
-case class GraphDdl(
-  graphs: Map[GraphName, Graph]
-)
+case class GraphDdl(graphs: Map[GraphName, Graph]) {
+  def ++(other: GraphDdl): GraphDdl = GraphDdl(graphs ++ other.graphs)
+}
 
 case class Graph(
   name: GraphName,
-  graphType: Schema,
+  graphType: GraphType,
   nodeToViewMappings: Map[NodeViewKey, NodeToViewMapping],
   edgeToViewMappings: List[EdgeToViewMapping]
 ) {
 
-  // TODO: validate (during GraphDdl construction) if the user always uses the same join columns for the node views
   def nodeIdColumnsFor(nodeViewKey: NodeViewKey): Option[List[String]] = edgeToViewMappings.collectFirst {
-    case evm: EdgeToViewMapping if evm.startNode.nodeViewKey == nodeViewKey =>
-      evm.startNode.joinPredicates.map(_.nodeColumn)
-
-    case evm: EdgeToViewMapping if evm.endNode.nodeViewKey == nodeViewKey =>
-      evm.endNode.joinPredicates.map(_.nodeColumn)
+    case evm: EdgeToViewMapping if evm.startNode.nodeViewKey == nodeViewKey => evm.startNodeJoinColumns
+    case evm: EdgeToViewMapping if evm.endNode.nodeViewKey == nodeViewKey => evm.endNodeJoinColumns
   }
+}
+
+object GraphType {
+  val empty = GraphType("empty")
+}
+
+case class GraphType(
+  name: String,
+  elementTypes: Set[ElementType] = Set.empty,
+  nodeTypes: Set[NodeType] = Set.empty,
+  relTypes: Set[RelationshipType] = Set.empty
+) {
+
+  private lazy val elementTypesByName = elementTypes.map(et => et.name -> et).toMap
+
+  def nodeElementTypes: Set[ElementType] = nodeTypes.flatMap(_.labels).map(elementTypesByName)
+
+  def relElementTypes: Set[ElementType] = relTypes.flatMap(_.labels).map(elementTypesByName)
+
+  def nodePropertyKeys(labels: String*): PropertyKeys =
+    nodePropertyKeys(NodeType(labels.toSet))
+
+  def nodePropertyKeys(nodeType: NodeType): PropertyKeys =
+    getPropertyKeys(nodeType.labels)
+
+  def relationshipPropertyKeys(startLabel: String, label: String, endLabel: String): PropertyKeys =
+    relationshipPropertyKeys(RelationshipType(startLabel, label, endLabel))
+
+  def relationshipPropertyKeys(startLabels: Set[String], labels: Set[String], endLabels: Set[String]): PropertyKeys =
+    relationshipPropertyKeys(RelationshipType(NodeType(startLabels), labels, NodeType(endLabels)))
+
+  def relationshipPropertyKeys(relationshipType: RelationshipType): PropertyKeys =
+    getPropertyKeys(relationshipType.labels)
+
+  def withName(name: String): GraphType =
+    copy(name = name)
+
+  def withElementType(label: String, propertyKeys: (String, CypherType)*): GraphType =
+    withElementType(ElementType(name = label, properties = propertyKeys.toMap))
+
+  def withElementType(label: String, parents: Set[String], propertyKeys: (String, CypherType)*): GraphType =
+    withElementType(ElementType(name = label, parents = parents, properties = propertyKeys.toMap))
+
+  def withElementType(elementType: ElementType): GraphType = {
+    validateElementType(elementType)
+    copy(elementTypes = elementTypes + elementType)
+  }
+
+  def withNodeType(labels: String*): GraphType = withNodeType(NodeType(labels: _*))
+
+  def withNodeType(nodeType: NodeType): GraphType = {
+    validateNodeType(nodeType)
+    copy(nodeTypes = nodeTypes + expandNodeType(nodeType))
+  }
+
+  def withRelationshipType(startLabel: String, label: String, endLabel: String): GraphType =
+    withRelationshipType(Set(startLabel), Set(label), Set(endLabel))
+
+  def withRelationshipType(startLabels: Set[String], labels: Set[String], endLabels: Set[String]): GraphType =
+    withRelationshipType(RelationshipType(NodeType(startLabels), labels, NodeType(endLabels)))
+
+  def withRelationshipType(relationshipType: RelationshipType): GraphType = {
+    validateRelType(relationshipType)
+    copy(relTypes = relTypes + expandRelType(relationshipType))
+  }
+
+  private def validateElementType(elementType: ElementType): Unit = tryWithContext(elementType.toString) {
+    if (elementTypes.contains(elementType)) {
+      duplicate("Element type already exists", elementType)
+    }
+    elementType.parents.foreach(validateElementTypeHierarchy)
+  }
+
+  private def validateElementTypeHierarchy(parent: String): Unit = {
+    if (elementTypes.exists(_.name == parent)) {
+      elementTypes.collectFirst { case et if et.name == parent => et }.get.parents.foreach(validateElementTypeHierarchy)
+    } else {
+      illegalInheritance("Element type not found", parent)
+    }
+  }
+
+  private def expandNodeType(nodeType: NodeType): NodeType =
+    NodeType(labels = nodeType.labels.flatMap(getElementTypes).map(_.name))
+
+  private def expandRelType(relType: RelationshipType): RelationshipType =
+    RelationshipType(
+      startNodeType = expandNodeType(relType.startNodeType),
+      labels = relType.labels.flatMap(getElementTypes).map(_.name),
+      endNodeType = expandNodeType(relType.endNodeType))
+
+  private def validateNodeType(nodeType: NodeType): Unit = tryWithContext(nodeType.toString) {
+    nodeType.labels.foreach(validateElementTypeHierarchy)
+  }
+
+  private def validateRelType(relType: RelationshipType): Unit = tryWithContext(relType.toString) {
+    validateNodeType(relType.startNodeType)
+    validateNodeType(relType.endNodeType)
+    relType.labels.foreach(validateElementTypeHierarchy)
+  }
+
+  private def getElementTypes(label: String): Set[ElementType] = {
+    val children = elementTypes.filter(_.name == label)
+    children ++ children.flatMap(_.parents.flatMap(getElementTypes))
+  }
+
+  private def getPropertyKeys(labels: Set[String]): PropertyKeys =
+    labels.flatMap(getElementTypes).map(_.properties).reduce(_ |+| _)
 }
 
 case class ViewId(maybeSetSchema: Option[SetSchemaDefinition], parts: List[String]) {
   lazy val dataSource: String = {
     (maybeSetSchema, parts) match {
-      case (_, dataSource :: schema :: view :: Nil) => dataSource
-      case (None, dataSource :: tail) if tail.nonEmpty => dataSource
+      case (_, ds :: _ :: _ :: Nil) => ds
+      case (None, ds :: tail) if tail.nonEmpty => ds
       case (Some(setSchema), _) => setSchema.dataSource
-      case _ => malformed("Relative view identifier requires a preceeding SET SCHEMA statement", parts.mkString("."))
+      case _ => malformed("Relative view identifier requires a preceding SET SCHEMA statement", parts.mkString("."))
     }
+  }
+
+  lazy val tableName: String = (maybeSetSchema, parts) match {
+    case (_, _ :: schema :: view :: Nil) => s"$schema.$view"
+    case (Some(SetSchemaDefinition(_, schema)), view :: Nil) => s"$schema.$view"
+    case (None, view) if view.size < 3 =>
+      malformed("Relative view identifier requires a preceding SET SCHEMA statement", view.mkString("."))
+    case (Some(_), view) if view.size > 1 =>
+      malformed("Relative view identifier must have exactly one segment", view.mkString("."))
   }
 }
 
@@ -447,6 +602,10 @@ case class EdgeToViewMapping(
   propertyMappings: PropertyMappings
 ) extends ElementToViewMapping {
   def key: EdgeViewKey = EdgeViewKey(relType, view)
+
+  def startNodeJoinColumns: List[String] = startNode.joinPredicates.map(_.nodeColumn)
+
+  def endNodeJoinColumns: List[String] = endNode.joinPredicates.map(_.nodeColumn)
 }
 
 case class StartNode(
@@ -464,37 +623,44 @@ case class Join(
   edgeColumn: String
 )
 
+case class ElementType(
+  name: String,
+  parents: Set[String] = Set.empty,
+  properties: Map[String, CypherType] = Map.empty,
+  maybeKey: Option[KeyDefinition] = None
+)
+
 object NodeType {
-  def apply(elementTypes: String*): NodeType = NodeType(elementTypes.toSet)
+  def apply(labels: String*): NodeType = NodeType(labels.toSet)
 }
 
-case class NodeType(elementTypes: Set[String]) {
-  override def toString: String = s"(${elementTypes.mkString(", ")})"
+case class NodeType(labels: Set[String]) {
+  override def toString: String = s"(${labels.mkString(",")})"
 }
 
 object RelationshipType {
-  def apply(startNodeElementType: String, elementType: String, endNodeElementType: String): RelationshipType =
-    RelationshipType(NodeType(startNodeElementType), elementType, NodeType(endNodeElementType))
+  def apply(startNodeElementType: String, label: String, endNodeElementType: String): RelationshipType =
+    RelationshipType(NodeType(startNodeElementType), Set(label), NodeType(endNodeElementType))
 }
 
-case class RelationshipType(startNodeType: NodeType, elementType: String, endNodeType: NodeType) {
-  override def toString: String = s"$startNodeType-[$elementType]->$endNodeType"
-
+case class RelationshipType(startNodeType: NodeType, labels: Set[String], endNodeType: NodeType) {
+  override def toString: String = s"$startNodeType-[${labels.mkString(",")}]->$endNodeType"
 }
 
 trait ElementViewKey {
   def elementType: Set[String]
+
   def viewId: ViewId
 }
 
 case class NodeViewKey(nodeType: NodeType, viewId: ViewId) extends ElementViewKey {
-  override val elementType: Set[String] = nodeType.elementTypes
+  override val elementType: Set[String] = nodeType.labels
 
   override def toString: String = s"node type: $nodeType, view: $viewId"
 }
 
 case class EdgeViewKey(relType: RelationshipType, viewId: ViewId) extends ElementViewKey {
-  override val elementType: Set[String] = Set(relType.elementType)
+  override val elementType: Set[String] = relType.labels
 
   override def toString: String = s"relationship type: $relType, view: $viewId"
 }

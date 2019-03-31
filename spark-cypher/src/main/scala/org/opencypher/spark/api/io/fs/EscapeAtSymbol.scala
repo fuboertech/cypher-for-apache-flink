@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ package org.opencypher.spark.api.io.fs
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.StructType
-import org.opencypher.spark.impl.DataFrameOps._
+import org.opencypher.spark.impl.table.SparkTable._
 
 trait EscapeAtSymbol extends FSGraphSource {
 

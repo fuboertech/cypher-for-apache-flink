@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,16 @@
  */
 package org.opencypher.okapi.api.value
 
-import java.sql.Date
 import java.util.Objects
 
 import org.opencypher.okapi.api.value.CypherValue.CypherEntity._
 import org.opencypher.okapi.api.value.CypherValue.CypherNode._
 import org.opencypher.okapi.api.value.CypherValue.CypherRelationship._
 import org.opencypher.okapi.impl.exception.{IllegalArgumentException, UnsupportedOperationException}
-import upickle.Js
+import org.opencypher.okapi.impl.temporal.Duration
+import ujson._
 
+import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import scala.util.hashing.MurmurHash3
@@ -44,40 +45,56 @@ object CypherValue {
   /**
     * Converts a Scala/Java value to a compatible Cypher value, fails if the conversion is not supported.
     *
-    * @param v value to convert
+    * @param v               value to convert
+    * @param customConverter additional conversion rules
     * @return compatible CypherValue
     */
-  def apply(v: Any): CypherValue = {
+  def apply(v: Any)(implicit customConverter: CypherValueConverter = NoopCypherValueConverter): CypherValue = {
+
     def seqToCypherList(s: Seq[_]): CypherList = s.map(CypherValue(_)).toList
 
-    v match {
-      case cv: CypherValue => cv
-      case null => CypherNull
-      case jb: java.lang.Byte => jb.toLong
-      case js: java.lang.Short => js.toLong
-      case ji: java.lang.Integer => ji.toLong
-      case jl: java.lang.Long => jl.toLong
-      case jf: java.lang.Float => jf.toDouble
-      case jd: java.lang.Double => jd.toDouble
-      case js: java.lang.String => js.toString
-      case jb: java.lang.Boolean => jb.booleanValue
-      case jl: java.util.List[_] => seqToCypherList(jl.toArray)
-      case dt: java.sql.Date => dt
-      case ts: java.sql.Timestamp => ts
-      case a: Array[_] => seqToCypherList(a)
-      case s: Seq[_] => seqToCypherList(s)
-      case m: Map[_, _] => m.map { case (k, cv) => k.toString -> CypherValue(cv) }
-      case b: Byte => b.toLong
-      case s: Short => s.toLong
-      case i: Int => i.toLong
-      case l: Long => l
-      case f: Float => f.toDouble
-      case d: Double => d
-      case b: Boolean => b
-      case invalid =>
-        throw IllegalArgumentException(
-          "a value that can be converted to a Cypher value", s"$invalid of type ${invalid.getClass.getName}")
-    }
+    customConverter.convert(v).getOrElse(
+      v match {
+        case cv: CypherValue => cv
+        case null => CypherNull
+        case jb: java.lang.Byte => jb.toLong
+        case js: java.lang.Short => js.toLong
+        case ji: java.lang.Integer => ji.toLong
+        case jl: java.lang.Long => jl.toLong
+        case jf: java.lang.Float => jf.toDouble
+        case jd: java.lang.Double => jd.toDouble
+        case js: java.lang.String => js.toString
+        case jb: java.lang.Boolean => jb.booleanValue
+        case jl: java.util.List[_] => seqToCypherList(jl.toArray)
+        case dt: java.sql.Date => dt.toLocalDate
+        case ts: java.sql.Timestamp => ts.toLocalDateTime
+        case ld: java.time.LocalDate => ld
+        case ldt: java.time.LocalDateTime => ldt
+        case du: Duration => du
+        case a: Array[_] => seqToCypherList(a)
+        case s: Seq[_] => seqToCypherList(s)
+        case m: Map[_, _] => m.map { case (k, cv) => k.toString -> CypherValue(cv) }
+        case b: Byte => b.toLong
+        case s: Short => s.toLong
+        case i: Int => i.toLong
+        case l: Long => l
+        case f: Float => f.toDouble
+        case d: Double => d
+        case b: Boolean => b
+        case invalid =>
+          throw IllegalArgumentException(
+            "a value that can be converted to a Cypher value", s"$invalid of type ${invalid.getClass.getName}")
+      })
+  }
+
+  /**
+    * Trait to inject additional CypherValue conversion rules
+    */
+  trait CypherValueConverter {
+    def convert(v: Any): Option[CypherValue]
+  }
+  object NoopCypherValueConverter extends CypherValueConverter {
+    override def convert(v: Any): Option[CypherValue] = None
   }
 
   /**
@@ -98,6 +115,18 @@ object CypherValue {
     */
   def unapply(cv: CypherValue): Option[Any] = {
     Option(cv).flatMap(v => Option(v.value))
+  }
+
+  object Format {
+    /**
+      * Formats a given value to its String representation.
+      */
+    implicit def defaultValueFormatter(value: Any): String = value match {
+      case s: Seq[_] => s.map(defaultValueFormatter).mkString
+      case a: Array[_] => a.map(defaultValueFormatter).mkString
+      case b: Byte => "%02X".format(b)
+      case other => Objects.toString(other)
+    }
   }
 
   /**
@@ -172,7 +201,7 @@ object CypherValue {
       * A Cypher string representation. For more information about the exact format of these, please refer to
       * [[https://github.com/opencypher/openCypher/tree/master/tck#format-of-the-expected-results the openCypher TCK]].
       */
-    def toCypherString: String = {
+    def toCypherString()(implicit formatValue: Any => String): String = {
       this match {
         case CypherString(s) => s"'${escape(s)}'"
         case CypherList(l) => l.map(_.toCypherString).mkString("[", ", ", "]")
@@ -195,34 +224,34 @@ object CypherValue {
           Seq(labelString, propertyString)
             .filter(_.nonEmpty)
             .mkString("(", " ", ")")
-        case _ => Objects.toString(value)
+        case other => formatValue(other)
       }
     }
 
-    def toJson: Js.Value = {
+    def toJson()(implicit formatValue: Any => String): Value = {
       this match {
-        case CypherNull => Js.Null
-        case CypherString(s) => Js.Str(s)
+        case CypherNull => Null
+        case CypherString(s) => Str(s)
         case CypherList(l) => l.map(_.toJson)
         case CypherMap(m) => m.mapValues(_.toJson).toSeq.sortBy(_._1)
         case CypherRelationship(id, startId, endId, relType, properties) =>
-          Js.Obj(
-            idJsonKey -> Js.Str(id.toString),
-            typeJsonKey -> Js.Str(relType),
-            startIdJsonKey -> Js.Str(startId.toString),
-            endIdJsonKey -> Js.Str(endId.toString),
+          Obj(
+            idJsonKey -> Str(formatValue(id)),
+            typeJsonKey -> Str(relType),
+            startIdJsonKey -> Str(formatValue(startId)),
+            endIdJsonKey -> Str(formatValue(endId)),
             propertiesJsonKey -> properties.toJson
           )
         case CypherNode(id, labels, properties) =>
-          Js.Obj(
-            idJsonKey -> Js.Str(id.toString),
-            labelsJsonKey -> labels.toSeq.sorted.map(Js.Str),
+          Obj(
+            idJsonKey -> Str(formatValue(id)),
+            labelsJsonKey -> labels.toSeq.sorted.map(Str),
             propertiesJsonKey -> properties.toJson
           )
-        case CypherFloat(d) => Js.Num(d)
-        case CypherInteger(l) => Js.Str(l.toString) // `Js.Num` would lose precision
-        case CypherBoolean(b) => Js.Bool(b)
-        case other => Js.Str(other.value.toString)
+        case CypherFloat(d) => Num(d)
+        case CypherInteger(l) => Str(l.toString) // `Num` would lose precision
+        case CypherBoolean(b) => Bool(b)
+        case other => Str(formatValue(other.value))
       }
     }
 
@@ -261,11 +290,15 @@ object CypherValue {
 
   implicit class CypherFloat(val value: Double) extends AnyVal with CypherNumber[Double]
 
-  implicit class CypherDateTime(val value: java.sql.Timestamp) extends AnyVal with MaterialCypherValue[java.sql.Timestamp] {
+  implicit class CypherLocalDateTime(val value: java.time.LocalDateTime) extends AnyVal with MaterialCypherValue[java.time.LocalDateTime] {
     override def unwrap: Any = value
   }
 
-  implicit class CypherDate(val value: java.sql.Date) extends AnyVal with MaterialCypherValue[java.sql.Date] {
+  implicit class CypherDate(val value: java.time.LocalDate) extends AnyVal with MaterialCypherValue[java.time.LocalDate] {
+    override def unwrap: Any = value
+  }
+
+  implicit class CypherDuration(val value: Duration) extends AnyVal with MaterialCypherValue[Duration] {
     override def unwrap: Any = value
   }
 
@@ -473,8 +506,9 @@ object CypherValue {
 
   object CypherFloat extends UnapplyValue[Double, CypherFloat]
 
-  object CypherDateTime extends UnapplyValue[java.sql.Timestamp, CypherDateTime]
+  object CypherLocalDateTime extends UnapplyValue[java.time.LocalDateTime, CypherLocalDateTime]
 
-  object CypherDate extends UnapplyValue[java.sql.Date, CypherDate]
+  object CypherDate extends UnapplyValue[java.time.LocalDate, CypherDate]
 
+  object CypherDuration extends UnapplyValue[Duration, CypherDuration]
 }

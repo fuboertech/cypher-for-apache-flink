@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ case object Endpoints {
   implicit def one(field: IRField): IdenticalEndpoints =
     OneSingleEndpoint(field)
 
-  implicit def two(fields: (IRField, IRField)): Endpoints = {
+  implicit def two(fields: (IRField, IRField)): DifferentEndpoints = {
     val (source, target) = fields
-    apply(source, target)
+    TwoDifferentEndpoints(source, target)
   }
 
   private case class OneSingleEndpoint(field: IRField) extends IdenticalEndpoints {

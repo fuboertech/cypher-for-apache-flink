@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,32 +33,19 @@ import org.opencypher.okapi.api.value.CypherValue.CypherInteger
 import org.opencypher.okapi.impl.exception.IllegalArgumentException
 import org.opencypher.okapi.ir.api.block.{Asc, Desc, SortItem}
 import org.opencypher.okapi.ir.api.expr.Expr._
+import org.opencypher.okapi.ir.api.expr.PrefixId.GraphIdPrefix
 import org.opencypher.okapi.ir.api.expr._
 import org.opencypher.okapi.logical.impl.{LogicalCatalogGraph, LogicalPatternGraph}
 import org.opencypher.okapi.relational.api.graph.{RelationalCypherGraph, RelationalCypherSession}
 import org.opencypher.okapi.relational.api.planning.RelationalRuntimeContext
 import org.opencypher.okapi.relational.api.table.{RelationalCypherRecords, Table}
-import org.opencypher.okapi.relational.impl.operators.TagStrategy._
 import org.opencypher.okapi.relational.impl.planning._
 import org.opencypher.okapi.relational.impl.table.RecordHeader
 import org.opencypher.okapi.trees.AbstractTreeNode
 
 import scala.reflect.runtime.universe.TypeTag
 
-object TagStrategy {
-
-  type TagStrategy = Map[QualifiedGraphName, Map[Int, Int]]
-
-  def empty = Map.empty[QualifiedGraphName, Map[Int, Int]]
-
-  def apply(tuple: (QualifiedGraphName, Map[Int, Int])*): Map[QualifiedGraphName, Map[Int, Int]] = {
-    tuple.toMap
-  }
-}
-
 abstract class RelationalOperator[T <: Table[T] : TypeTag] extends AbstractTreeNode[RelationalOperator[T]] {
-
-  def tagStrategy: TagStrategy = Map.empty
 
   def header: RecordHeader = children.head.header
 
@@ -72,14 +59,11 @@ abstract class RelationalOperator[T <: Table[T] : TypeTag] extends AbstractTreeN
 
   def graphName: QualifiedGraphName = children.head.graphName
 
-  def returnItems: Option[Seq[Var]] = children.head.returnItems
+  def maybeReturnItems: Option[Seq[Var]] = children.head.maybeReturnItems
 
   protected def resolve(qualifiedGraphName: QualifiedGraphName)
     (implicit context: RelationalRuntimeContext[T]): RelationalCypherGraph[T] =
     context.resolveGraph(qualifiedGraphName)
-
-  protected def resolveTags(qgn: QualifiedGraphName)(implicit context: RelationalRuntimeContext[T]): Set[Int] =
-    resolve(qgn).tags
 
   def table: T = {
     val t = _table
@@ -141,39 +125,53 @@ abstract class RelationalOperator[T <: Table[T] : TypeTag] extends AbstractTreeN
   }
 }
 
+trait EmptyTable[T <: Table[T]] {
+  self: RelationalOperator[T] =>
+
+  override lazy val header: RecordHeader = RecordHeader.empty
+
+  override lazy val _table: T = session.records.empty().table
+}
+
+trait UnitTable[T <: Table[T]] {
+  self: RelationalOperator[T] =>
+
+  override lazy val header: RecordHeader = RecordHeader.empty
+
+  override lazy val _table: T = session.records.unit().table
+}
+
 // Leaf
 
 object Start {
 
-  def from[T <: Table[T] : TypeTag](header: RecordHeader, table: T)
-    (implicit context: RelationalRuntimeContext[T]): Start[T] = {
-    Start(context.session.emptyGraphQgn, Some(context.session.records.from(header, table)))
-  }
-
-  def apply[T <: Table[T] : TypeTag](records: RelationalCypherRecords[T])
+  def fromEmptyGraph[T <: Table[T] : TypeTag](records: RelationalCypherRecords[T])
     (implicit context: RelationalRuntimeContext[T]): Start[T] = {
     Start(context.session.emptyGraphQgn, Some(records))
   }
+
+  def apply[T <: Table[T] : TypeTag](qgn: QualifiedGraphName, records: RelationalCypherRecords[T])
+    (implicit context: RelationalRuntimeContext[T]): Start[T] = {
+    Start(qgn, Some(records))
+  }
+
 }
 
 final case class Start[T <: Table[T] : TypeTag](
   qgn: QualifiedGraphName,
-  maybeRecords: Option[RelationalCypherRecords[T]] = None,
-  override val tagStrategy: TagStrategy = TagStrategy.empty
+  maybeRecords: Option[RelationalCypherRecords[T]] = None
 )(implicit override val context: RelationalRuntimeContext[T], override val tt: TypeTag[RelationalOperator[T]])
   extends RelationalOperator[T] {
 
   override lazy val header: RecordHeader = maybeRecords.map(_.header).getOrElse(RecordHeader.empty)
 
-  override lazy val _table: T = maybeRecords.map(_.table).getOrElse {
-    session.records.unit().table
-  }
+  override lazy val _table: T = maybeRecords.map(_.table).getOrElse(session.records.unit().table)
 
   override lazy val graph: RelationalCypherGraph[T] = resolve(qgn)
 
   override lazy val graphName: QualifiedGraphName = qgn
 
-  override lazy val returnItems: Option[Seq[Var]] = None
+  override lazy val maybeReturnItems: Option[Seq[Var]] = None
 
   override def toString: String = {
     val graphArg = qgn.toString
@@ -186,11 +184,21 @@ final case class Start[T <: Table[T] : TypeTag](
 
 // Unary
 
+final case class PrefixGraph[T <: Table[T] : TypeTag](
+  in: RelationalOperator[T],
+  prefix: GraphIdPrefix
+) extends RelationalOperator[T] with EmptyTable[T] {
+
+  override lazy val graphName: QualifiedGraphName = QualifiedGraphName(s"${in.graphName}_tempPrefixed_$prefix")
+
+  override lazy val graph: RelationalCypherGraph[T] = session.graphs.prefixedGraph(in.graph, prefix)
+}
+
 /**
   * Cache is a marker operator that indicates that its child operator is used multiple times within the query.
   */
 final case class Cache[T <: Table[T] : TypeTag](in: RelationalOperator[T])
-   extends RelationalOperator[T] {
+  extends RelationalOperator[T] {
 
   override lazy val _table: T = in._table.cache()
 
@@ -275,22 +283,6 @@ final case class Drop[E <: Expr, T <: Table[T] : TypeTag](
   }
 }
 
-final case class RenameColumns[T <: Table[T] : TypeTag](
-  in: RelationalOperator[T],
-  columnRenamings: Map[String, String]
-) extends RelationalOperator[T] {
-
-  private val actualRenamings: Map[String, String] = columnRenamings.filterNot { case (oldName, newName) => oldName == newName }
-
-  override lazy val header: RecordHeader = actualRenamings.foldLeft(in.header) {
-    case (currentHeader, (oldColumnName, newColumnName)) => currentHeader.withColumnRenamed(oldColumnName, newColumnName)
-  }
-
-  override lazy val _table: T = actualRenamings.foldLeft(in.table) {
-    case (currentTable, (oldColumnName, newColumnName)) => currentTable.withColumnRenamed(oldColumnName, newColumnName)
-  }
-}
-
 final case class Filter[T <: Table[T] : TypeTag](
   in: RelationalOperator[T],
   expr: Expr
@@ -302,7 +294,7 @@ final case class Filter[T <: Table[T] : TypeTag](
 }
 
 final case class ReturnGraph[T <: Table[T] : TypeTag](in: RelationalOperator[T])
-   extends RelationalOperator[T] {
+  extends RelationalOperator[T] {
 
   override lazy val header: RecordHeader = RecordHeader.empty
 
@@ -311,10 +303,13 @@ final case class ReturnGraph[T <: Table[T] : TypeTag](in: RelationalOperator[T])
 
 final case class Select[T <: Table[T] : TypeTag](
   in: RelationalOperator[T],
-  expressions: List[Expr]
+  expressions: List[Expr],
+  columnRenames: Map[Expr, String] = Map.empty
 ) extends RelationalOperator[T] {
 
-  override lazy val header: RecordHeader = in.header.select(expressions: _*)
+  private lazy val selectHeader = in.header.select(expressions: _*)
+
+  override lazy val header: RecordHeader = selectHeader.withColumnsReplaced(columnRenames)
 
   private lazy val returnExpressions = expressions.map {
     case AliasExpr(_, alias) => alias
@@ -323,10 +318,11 @@ final case class Select[T <: Table[T] : TypeTag](
 
   override lazy val _table: T = {
     val selectExpressions = returnExpressions.flatMap(expr => header.expressionsFor(expr).toSeq.sorted)
-    in.table.select(selectExpressions.map(header.column).distinct: _*)
+    val selectColumns = selectExpressions.map { expr => selectHeader.column(expr) -> header.column(expr) }.distinct
+    in.table.select(selectColumns.head, selectColumns.tail: _*)
   }
 
-  override lazy val returnItems: Option[Seq[Var]] =
+  override lazy val maybeReturnItems: Option[Seq[Var]] =
     Some(returnExpressions.flatMap(_.owner).collect { case e: Var => e }.distinct)
 }
 
@@ -345,10 +341,10 @@ final case class Aggregate[T <: Table[T] : TypeTag](
   aggregations: Set[(Var, Aggregator)]
 ) extends RelationalOperator[T] {
 
-  override lazy val header: RecordHeader = in.header.select(group).withExprs(aggregations.map(_._1))
+  override lazy val header: RecordHeader = in.header.select(group).withExprs(aggregations.map { case (v, _) => v })
 
   override lazy val _table: T = {
-    val preparedAggregations = aggregations.map { case (v, agg) => agg -> (header.column(v) -> v.cypherType) }
+    val preparedAggregations = aggregations.map { case (v, agg) => header.column(v) -> agg }.toMap
     in.table.group(group, preparedAggregations)(in.header, context.parameters)
   }
 }
@@ -434,7 +430,6 @@ final case class Join[T <: Table[T] : TypeTag](
   joinExprs: Seq[(Expr, Expr)] = Seq.empty,
   joinType: JoinType
 ) extends RelationalOperator[T] {
-  require(joinExprs.nonEmpty || joinType == CrossJoin, "Join type must either be 'CrossJoin' or join expressions may not be empty")
   require((lhs.header.expressions intersect rhs.header.expressions).isEmpty, "Join cannot join operators with overlapping expressions")
   require((lhs.header.columns intersect rhs.header.columns).isEmpty, "Join cannot join tables with column name collisions")
 
@@ -496,19 +491,15 @@ final case class TabularUnionAll[T <: Table[T] : TypeTag](
 final case class ConstructGraph[T <: Table[T] : TypeTag](
   in: RelationalOperator[T],
   constructedGraph: RelationalCypherGraph[T],
-  override val graphName: QualifiedGraphName,
-  override val tagStrategy: Map[QualifiedGraphName, Map[Int, Int]],
   construct: LogicalPatternGraph,
   override val context: RelationalRuntimeContext[T]
-) extends RelationalOperator[T] {
+) extends RelationalOperator[T] with UnitTable[T] {
 
-  override lazy val header: RecordHeader = RecordHeader.empty
-
-  override lazy val _table: T = session.records.unit().table
-
-  override def returnItems: Option[Seq[Var]] = None
+  override def maybeReturnItems: Option[Seq[Var]] = None
 
   override lazy val graph: RelationalCypherGraph[T] = constructedGraph
+
+  override def graphName: QualifiedGraphName = construct.qualifiedGraphName
 
   override def toString: String = {
     val entities = construct.clones.keySet ++ construct.newEntities.map(_.v)
@@ -521,21 +512,10 @@ final case class ConstructGraph[T <: Table[T] : TypeTag](
 final case class GraphUnionAll[T <: Table[T] : TypeTag](
   inputs: NonEmptyList[RelationalOperator[T]],
   qgn: QualifiedGraphName
-) extends RelationalOperator[T] {
-
-  override lazy val header: RecordHeader = RecordHeader.empty
-
-  override lazy val _table: T = session.records.empty().table
-
-  import org.opencypher.okapi.relational.api.tagging.TagSupport._
-
-  override lazy val tagStrategy: Map[QualifiedGraphName, Map[Int, Int]] = computeRetaggings(inputs.toList.map(r => r.graphName -> r.graph.tags)).toMap
+) extends RelationalOperator[T] with EmptyTable[T]  {
 
   override lazy val graphName: QualifiedGraphName = qgn
 
-  override lazy val graph: RelationalCypherGraph[T] = {
-    val graphWithTagStrategy = inputs.toList.map(i => i.graph -> tagStrategy(i.graphName))
-    session.graphs.unionGraph(graphWithTagStrategy)
-  }
+  override lazy val graph: RelationalCypherGraph[T] = session.graphs.unionGraph(inputs.map(_.graph).toList: _*)
 
 }

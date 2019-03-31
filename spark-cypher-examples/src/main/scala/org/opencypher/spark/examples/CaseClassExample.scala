@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,13 +29,13 @@ package org.opencypher.spark.examples
 
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.api.io.{Node, Relationship, RelationshipType}
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.util.App
 
 /**
   * Demonstrates basic usage of the CAPS API by loading an example network via Scala case classes and running a Cypher
   * query on it.
   */
-object CaseClassExample extends ConsoleApp {
+object CaseClassExample extends App {
 
   // 1) Create CAPS session
   implicit val session: CAPSSession = CAPSSession.local()

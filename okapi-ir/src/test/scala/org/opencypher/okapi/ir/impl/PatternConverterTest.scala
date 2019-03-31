@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
  */
 package org.opencypher.okapi.ir.impl
 
-import org.opencypher.okapi.api.types.{CTNode, CTRelationship, CypherType}
+import org.opencypher.okapi.api.types.{CTAny, CTNode, CTRelationship, CypherType}
 import org.opencypher.okapi.ir.api.IRField
 import org.opencypher.okapi.ir.api.expr._
 import org.opencypher.okapi.ir.api.pattern._
@@ -56,8 +56,8 @@ class PatternConverterTest extends IrTestSuite {
 
     convert(pattern).properties should equal(
       Map(
-        a -> MapExpression(Map("name" -> StringLit("Hans")()))(),
-        rel -> MapExpression(Map("since" -> IntegerLit(2007)()))()
+        a -> MapExpression(Map("name" -> StringLit("Hans")))(CTAny),
+        rel -> MapExpression(Map("since" -> IntegerLit(2007)))(CTAny)
       )
     )
   }
@@ -253,7 +253,7 @@ class PatternConverterTest extends IrTestSuite {
       )
     }
   }
-  val converter = new PatternConverter()(IRBuilderHelper.emptyIRBuilderContext)
+  val converter = new PatternConverter(IRBuilderHelper.emptyIRBuilderContext)
 
   def convert(p: ast.Pattern, knownTypes: Map[ast.Expression, CypherType] = Map.empty): Pattern =
     converter.convert(p, knownTypes, testQualifiedGraphName)

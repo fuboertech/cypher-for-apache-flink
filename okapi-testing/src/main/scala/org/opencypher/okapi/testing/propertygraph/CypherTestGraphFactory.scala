@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,13 @@
  */
 package org.opencypher.okapi.testing.propertygraph
 
-import org.opencypher.okapi.api.graph.{CypherSession, PropertyGraph}
+import org.opencypher.okapi.api.graph.{CypherSession, Pattern, PropertyGraph}
 import org.opencypher.okapi.api.schema.Schema
 import org.opencypher.okapi.api.types.CypherType._
 
 trait CypherTestGraphFactory[C <: CypherSession] {
 
-  def apply(propertyGraph: InMemoryTestGraph)(implicit caps: C): PropertyGraph
+  def apply(propertyGraph: InMemoryTestGraph, additionalPattern: Seq[Pattern] = Seq.empty)(implicit caps: C): PropertyGraph
 
   def name: String
 

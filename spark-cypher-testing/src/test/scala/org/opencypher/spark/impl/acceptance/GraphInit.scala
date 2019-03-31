@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,19 +26,20 @@
  */
 package org.opencypher.spark.impl.acceptance
 
+import org.opencypher.okapi.api.graph.Pattern
 import org.opencypher.okapi.relational.api.graph.RelationalCypherGraph
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.impl.table.SparkTable.DataFrameTable
 import org.opencypher.spark.testing.support.creation.caps.CAPSScanGraphFactory
 
 trait GraphInit {
-  def initGraph(createQuery: String)(implicit caps: CAPSSession): RelationalCypherGraph[DataFrameTable]
+  def initGraph(createQuery: String, additionalPatterns: Seq[Pattern] = Seq.empty)
+    (implicit caps: CAPSSession): RelationalCypherGraph[DataFrameTable]
 }
 
-trait DefaultGraphInit extends ScanGraphInit
-
 trait ScanGraphInit extends GraphInit {
-  def initGraph(createQuery: String)(implicit caps: CAPSSession): RelationalCypherGraph[DataFrameTable] = {
-    CAPSScanGraphFactory.initGraph(createQuery)
+  def initGraph(createQuery: String, additionalPatterns: Seq[Pattern] = Seq.empty)
+    (implicit caps: CAPSSession): RelationalCypherGraph[DataFrameTable] = {
+    CAPSScanGraphFactory.initGraph(createQuery, additionalPatterns)
   }
 }

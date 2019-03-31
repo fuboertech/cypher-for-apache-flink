@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,12 @@
 package org.opencypher.spark.examples
 
 import org.apache.spark.graphx._
-import org.opencypher.okapi.api.io.conversion.NodeMapping
+import org.opencypher.okapi.api.io.conversion.NodeMappingBuilder
 import org.opencypher.spark.api.CAPSSession
 import org.opencypher.spark.api.CAPSSession._
-import org.opencypher.spark.api.io.CAPSNodeTable
-import org.opencypher.spark.util.ConsoleApp
+import org.opencypher.spark.api.io.CAPSEntityTable
+import org.opencypher.spark.impl.expressions.EncodeLong.decodeLong
+import org.opencypher.spark.util.App
 
 /**
   * Round trip CAPS -> GraphX -> CAPS
@@ -40,7 +41,7 @@ import org.opencypher.spark.util.ConsoleApp
   * This example demonstrates how CAPS results can be used to construct a GraphX graph and invoke a GraphX algorithm
   * on it. The computed ranks are imported back into CAPS and used in a Cypher query.
   */
-object GraphXPageRankExample extends ConsoleApp {
+object GraphXPageRankExample extends App {
 
   // 1) Create CAPS session
   implicit val session: CAPSSession = CAPSSession.local()
@@ -60,12 +61,12 @@ object GraphXPageRankExample extends ConsoleApp {
   )
 
   // 4) Create GraphX compatible RDDs from nodes and relationships
-  val graphXNodeRDD = nodes.records.asDataFrame.rdd.map(row => row.getLong(0) -> row.getString(1))
-  val graphXRelRDD = rels.records.asDataFrame.rdd.map(row => Edge(row.getLong(0), row.getLong(1), ()))
+  val graphXNodeRDD = nodes.records.asDataFrame.rdd.map(row => decodeLong(row.getAs[Array[Byte]](0)) -> row.getString(1))
+  val graphXRelRDD = rels.records.asDataFrame.rdd.map(row => Edge(decodeLong(row.getAs[Array[Byte]](0)), decodeLong(row.getAs[Array[Byte]](1)), ()))
 
   // 5) Compute Page Rank via GraphX
   val graph = Graph(graphXNodeRDD, graphXRelRDD)
-  val ranks = graph.pageRank(0.0001).vertices //.join(graphXNodeRDD).map { case (_, (rank, name)) => name -> rank }
+  val ranks = graph.pageRank(0.0001).vertices
 
   // 6) Convert RDD to DataFrame
   val rankTable = session.sparkSession.createDataFrame(ranks)
@@ -73,8 +74,8 @@ object GraphXPageRankExample extends ConsoleApp {
     .withColumnRenamed("_2", "rank")
 
   // 7) Create property graph from rank data
-  val ranksNodeMapping = NodeMapping.on("id").withPropertyKey("rank")
-  val rankNodes = session.readFrom(CAPSNodeTable.fromMapping(ranksNodeMapping, rankTable))
+  val ranksNodeMapping = NodeMappingBuilder.on("id").withPropertyKey("rank").build
+  val rankNodes = session.readFrom(CAPSEntityTable.create(ranksNodeMapping, rankTable))
 
   // 8) Mount both graphs in the session
   session.catalog.store("ranks", rankNodes)

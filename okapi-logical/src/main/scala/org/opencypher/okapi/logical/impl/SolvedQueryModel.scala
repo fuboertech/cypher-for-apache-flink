@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,9 @@ case class SolvedQueryModel(
       case CTRelationship(types, _) =>
         val predicate =
           if (types.size == 1)
-            HasType(r, RelType(types.head))(CTBoolean)
+            HasType(r, RelType(types.head))
           else
-            Ors(types.map(t => HasType(r, RelType(t))(CTBoolean)).toSeq: _*)
+            Ors(types.map(t => HasType(r, RelType(t))).toSeq: _*)
         withField(r).withPredicate(predicate)
       case _ =>
         throw IllegalArgumentException("a relationship variable", r)
