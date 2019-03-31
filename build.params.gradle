@@ -18,6 +18,7 @@ ext {
             neo4j     : [driver : '1.7.2',
                          harness: '3.4.10'],
 
+            flink     : '1.7.0',
             spark     : '2.4.0',
             hadoop    : '2.7.0',
             fastparse : '2.1.0',
