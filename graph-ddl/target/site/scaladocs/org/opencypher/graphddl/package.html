@@ -1,0 +1,903 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>graphddl - Graph DDL 0.2.4-SNAPSHOT API - org.opencypher.graphddl</title>
+          <meta name="description" content="graphddl - Graph DDL 0.2.4 - SNAPSHOT API - org.opencypher.graphddl" />
+          <meta name="keywords" content="graphddl Graph DDL 0.2.4 SNAPSHOT API org.opencypher.graphddl" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../index.html';
+            var hash = 'org.opencypher.graphddl.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../lib/package_big.png" />
+        <p id="owner"><a href="../../package.html" class="extype" name="org">org</a>.<a href="../package.html" class="extype" name="org.opencypher">opencypher</a></p>
+        <h1>graphddl</h1><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">graphddl</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="org.opencypher.graphddl.ContextualizedException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ContextualizedExceptionextendsGraphDdlExceptionwithProductwithSerializable"></a>
+      <a id="ContextualizedException:ContextualizedException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ContextualizedException.html"><span class="name">ContextualizedException</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cause">cause: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Exception">Exception</span>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlException.html" class="extype" name="org.opencypher.graphddl.GraphDdlException">GraphDdlException</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ContextualizedExceptionextendsGraphDdlExceptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.DdlDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DdlDefinitionextendsGraphDdlAstwithProductwithSerializable"></a>
+      <a id="DdlDefinition:DdlDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="DdlDefinition.html"><span class="name">DdlDefinition</span></a><span class="params">(<span name="statements">statements: <span class="extype" name="scala.List">List</span>[<a href="DdlStatement.html" class="extype" name="org.opencypher.graphddl.DdlStatement">DdlStatement</a>]</span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@DdlDefinitionextendsGraphDdlAstwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.DdlParsingException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DdlParsingExceptionextendsRuntimeExceptionwithSerializablewithProduct"></a>
+      <a id="DdlParsingException:DdlParsingException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="DdlParsingException.html"><span class="name">DdlParsingException</span></a><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>, <span name="locationPointer">locationPointer: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="expected">expected: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="parserStack">parserStack: <span class="extype" name="scala.List">List</span>[<span class="extype" name="fastparse.core.Frame">Frame</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.RuntimeException">RuntimeException</span> with <span class="extype" name="scala.Serializable">Serializable</span> with <span class="extype" name="scala.Product">Product</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@DdlParsingExceptionextendsRuntimeExceptionwithSerializablewithProduct" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.DdlStatement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="DdlStatementextendsAnyRef"></a>
+      <a id="DdlStatement:DdlStatement"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="DdlStatement.html"><span class="name">DdlStatement</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@DdlStatementextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.DuplicateDefinitionException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DuplicateDefinitionExceptionextendsGraphDdlExceptionwithProductwithSerializable"></a>
+      <a id="DuplicateDefinitionException:DuplicateDefinitionException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="DuplicateDefinitionException.html"><span class="name">DuplicateDefinitionException</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cause">cause: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Exception">Exception</span>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlException.html" class="extype" name="org.opencypher.graphddl.GraphDdlException">GraphDdlException</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@DuplicateDefinitionExceptionextendsGraphDdlExceptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.EdgeToViewMapping" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EdgeToViewMappingextendsElementToViewMappingwithProductwithSerializable"></a>
+      <a id="EdgeToViewMapping:EdgeToViewMapping"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="EdgeToViewMapping.html"><span class="name">EdgeToViewMapping</span></a><span class="params">(<span name="relType">relType: <a href="RelationshipType.html" class="extype" name="org.opencypher.graphddl.RelationshipType">RelationshipType</a></span>, <span name="view">view: <a href="ViewId.html" class="extype" name="org.opencypher.graphddl.ViewId">ViewId</a></span>, <span name="startNode">startNode: <a href="StartNode.html" class="extype" name="org.opencypher.graphddl.StartNode">StartNode</a></span>, <span name="endNode">endNode: <a href="EndNode.html" class="extype" name="org.opencypher.graphddl.EndNode">EndNode</a></span>, <span name="propertyMappings">propertyMappings: <a href="GraphDdl$.html#PropertyMappings=Map[String,String]" class="extmbr" name="org.opencypher.graphddl.GraphDdl.PropertyMappings">PropertyMappings</a></span>)</span><span class="result"> extends <a href="ElementToViewMapping.html" class="extype" name="org.opencypher.graphddl.ElementToViewMapping">ElementToViewMapping</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@EdgeToViewMappingextendsElementToViewMappingwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.EdgeViewKey" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EdgeViewKeyextendsElementViewKeywithProductwithSerializable"></a>
+      <a id="EdgeViewKey:EdgeViewKey"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="EdgeViewKey.html"><span class="name">EdgeViewKey</span></a><span class="params">(<span name="relType">relType: <a href="RelationshipType.html" class="extype" name="org.opencypher.graphddl.RelationshipType">RelationshipType</a></span>, <span name="viewId">viewId: <a href="ViewId.html" class="extype" name="org.opencypher.graphddl.ViewId">ViewId</a></span>)</span><span class="result"> extends <a href="ElementViewKey.html" class="extype" name="org.opencypher.graphddl.ElementViewKey">ElementViewKey</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@EdgeViewKeyextendsElementViewKeywithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.ElementToViewDefinition" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ElementToViewDefinitionextendsAnyRef"></a>
+      <a id="ElementToViewDefinition:ElementToViewDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ElementToViewDefinition.html"><span class="name">ElementToViewDefinition</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ElementToViewDefinitionextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.ElementToViewMapping" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ElementToViewMappingextendsAnyRef"></a>
+      <a id="ElementToViewMapping:ElementToViewMapping"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ElementToViewMapping.html"><span class="name">ElementToViewMapping</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ElementToViewMappingextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.ElementTypeDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ElementTypeDefinitionextendsGraphDdlAstwithDdlStatementwithGraphTypeStatementwithProductwithSerializable"></a>
+      <a id="ElementTypeDefinition:ElementTypeDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ElementTypeDefinition.html"><span class="name">ElementTypeDefinition</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="properties">properties: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, <span class="extype" name="org.opencypher.okapi.api.types.CypherType">CypherType</span>] = <span class="symbol">Map.empty</span></span>, <span name="maybeKey">maybeKey: <span class="extype" name="scala.Option">Option</span>[<a href="GraphDdlAst$.html#KeyDefinition=(String,Set[String])" class="extmbr" name="org.opencypher.graphddl.GraphDdlAst.KeyDefinition">KeyDefinition</a>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="DdlStatement.html" class="extype" name="org.opencypher.graphddl.DdlStatement">DdlStatement</a> with <a href="GraphTypeStatement.html" class="extype" name="org.opencypher.graphddl.GraphTypeStatement">GraphTypeStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ElementTypeDefinitionextendsGraphDdlAstwithDdlStatementwithGraphTypeStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.ElementViewKey" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ElementViewKeyextendsAnyRef"></a>
+      <a id="ElementViewKey:ElementViewKey"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="ElementViewKey.html"><span class="name">ElementViewKey</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ElementViewKeyextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.EndNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EndNodeextendsProductwithSerializable"></a>
+      <a id="EndNode:EndNode"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="EndNode.html"><span class="name">EndNode</span></a><span class="params">(<span name="nodeViewKey">nodeViewKey: <a href="NodeViewKey.html" class="extype" name="org.opencypher.graphddl.NodeViewKey">NodeViewKey</a></span>, <span name="joinPredicates">joinPredicates: <span class="extype" name="scala.List">List</span>[<a href="Join.html" class="extype" name="org.opencypher.graphddl.Join">Join</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@EndNodeextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.Graph" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphextendsProductwithSerializable"></a>
+      <a id="Graph:Graph"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Graph.html"><span class="name">Graph</span></a><span class="params">(<span name="name">name: <span class="extype" name="org.opencypher.okapi.api.graph.GraphName">GraphName</span></span>, <span name="graphType">graphType: <span class="extype" name="org.opencypher.okapi.api.schema.Schema">Schema</span></span>, <span name="nodeToViewMappings">nodeToViewMappings: <span class="extype" name="scala.Predef.Map">Map</span>[<a href="NodeViewKey.html" class="extype" name="org.opencypher.graphddl.NodeViewKey">NodeViewKey</a>, <a href="NodeToViewMapping.html" class="extype" name="org.opencypher.graphddl.NodeToViewMapping">NodeToViewMapping</a>]</span>, <span name="edgeToViewMappings">edgeToViewMappings: <span class="extype" name="scala.List">List</span>[<a href="EdgeToViewMapping.html" class="extype" name="org.opencypher.graphddl.EdgeToViewMapping">EdgeToViewMapping</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphDdl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphDdlextendsProductwithSerializable"></a>
+      <a id="GraphDdl:GraphDdl"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDdl.html"><span class="name">GraphDdl</span></a><span class="params">(<span name="graphs">graphs: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="org.opencypher.okapi.api.graph.GraphName">GraphName</span>, <a href="Graph.html" class="extype" name="org.opencypher.graphddl.Graph">Graph</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDdlextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphDdlAst" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GraphDdlAstextendsAbstractTreeNode[org.opencypher.graphddl.GraphDdlAst]"></a>
+      <a id="GraphDdlAst:GraphDdlAst"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDdlAst.html"><span class="name">GraphDdlAst</span></a><span class="result"> extends <span class="extype" name="org.opencypher.okapi.trees.AbstractTreeNode">AbstractTreeNode</span>[<a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDdlAstextendsAbstractTreeNode[org.opencypher.graphddl.GraphDdlAst]" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphDdlException" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GraphDdlExceptionextendsRuntimeExceptionwithSerializable"></a>
+      <a id="GraphDdlException:GraphDdlException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDdlException.html"><span class="name">GraphDdlException</span></a><span class="result"> extends <span class="extype" name="scala.RuntimeException">RuntimeException</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDdlExceptionextendsRuntimeExceptionwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphDefinitionextendsGraphDdlAstwithDdlStatementwithProductwithSerializable"></a>
+      <a id="GraphDefinition:GraphDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDefinition.html"><span class="name">GraphDefinition</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="maybeGraphTypeName">maybeGraphTypeName: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Predef.String">String</span>] = <span class="symbol">None</span></span>, <span name="statements">statements: <span class="extype" name="scala.List">List</span>[<a href="GraphStatement.html" class="extype" name="org.opencypher.graphddl.GraphStatement">GraphStatement</a>] = <span class="symbol">List.empty</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="DdlStatement.html" class="extype" name="org.opencypher.graphddl.DdlStatement">DdlStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDefinitionextendsGraphDdlAstwithDdlStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphStatement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GraphStatementextendsAnyRef"></a>
+      <a id="GraphStatement:GraphStatement"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphStatement.html"><span class="name">GraphStatement</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphStatementextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphTypeDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphTypeDefinitionextendsGraphDdlAstwithDdlStatementwithProductwithSerializable"></a>
+      <a id="GraphTypeDefinition:GraphTypeDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphTypeDefinition.html"><span class="name">GraphTypeDefinition</span></a><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="statements">statements: <span class="extype" name="scala.List">List</span>[<a href="GraphTypeStatement.html" class="extype" name="org.opencypher.graphddl.GraphTypeStatement">GraphTypeStatement</a>] = <span class="symbol">List.empty</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="DdlStatement.html" class="extype" name="org.opencypher.graphddl.DdlStatement">DdlStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphTypeDefinitionextendsGraphDdlAstwithDdlStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphTypeStatement" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="GraphTypeStatementextendsGraphStatement"></a>
+      <a id="GraphTypeStatement:GraphTypeStatement"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">sealed </span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphTypeStatement.html"><span class="name">GraphTypeStatement</span></a><span class="result"> extends <a href="GraphStatement.html" class="extype" name="org.opencypher.graphddl.GraphStatement">GraphStatement</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphTypeStatementextendsGraphStatement" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.Join" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="JoinextendsProductwithSerializable"></a>
+      <a id="Join:Join"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Join.html"><span class="name">Join</span></a><span class="params">(<span name="nodeColumn">nodeColumn: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="edgeColumn">edgeColumn: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@JoinextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.JoinOnDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="JoinOnDefinitionextendsGraphDdlAstwithProductwithSerializable"></a>
+      <a id="JoinOnDefinition:JoinOnDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="JoinOnDefinition.html"><span class="name">JoinOnDefinition</span></a><span class="params">(<span name="joinPredicates">joinPredicates: <span class="extype" name="scala.List">List</span>[(<a href="GraphDdlAst$.html#ColumnIdentifier=List[String]" class="extmbr" name="org.opencypher.graphddl.GraphDdlAst.ColumnIdentifier">ColumnIdentifier</a>, <a href="GraphDdlAst$.html#ColumnIdentifier=List[String]" class="extmbr" name="org.opencypher.graphddl.GraphDdlAst.ColumnIdentifier">ColumnIdentifier</a>)]</span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@JoinOnDefinitionextendsGraphDdlAstwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.MalformedIdentifier" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="MalformedIdentifierextendsGraphDdlExceptionwithProductwithSerializable"></a>
+      <a id="MalformedIdentifier:MalformedIdentifier"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="MalformedIdentifier.html"><span class="name">MalformedIdentifier</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cause">cause: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Exception">Exception</span>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlException.html" class="extype" name="org.opencypher.graphddl.GraphDdlException">GraphDdlException</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@MalformedIdentifierextendsGraphDdlExceptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeMappingDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeMappingDefinitionextendsGraphDdlAstwithGraphStatementwithProductwithSerializable"></a>
+      <a id="NodeMappingDefinition:NodeMappingDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeMappingDefinition.html"><span class="name">NodeMappingDefinition</span></a><span class="params">(<span name="nodeType">nodeType: <a href="NodeTypeDefinition.html" class="extype" name="org.opencypher.graphddl.NodeTypeDefinition">NodeTypeDefinition</a></span>, <span name="nodeToView">nodeToView: <span class="extype" name="scala.List">List</span>[<a href="NodeToViewDefinition.html" class="extype" name="org.opencypher.graphddl.NodeToViewDefinition">NodeToViewDefinition</a>] = <span class="symbol">List.empty</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="GraphStatement.html" class="extype" name="org.opencypher.graphddl.GraphStatement">GraphStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeMappingDefinitionextendsGraphDdlAstwithGraphStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeToViewDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeToViewDefinitionextendsGraphDdlAstwithElementToViewDefinitionwithProductwithSerializable"></a>
+      <a id="NodeToViewDefinition:NodeToViewDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeToViewDefinition.html"><span class="name">NodeToViewDefinition</span></a><span class="params">(<span name="viewId">viewId: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="maybePropertyMapping">maybePropertyMapping: <span class="extype" name="scala.Option">Option</span>[<a href="GraphDdlAst$.html#PropertyToColumnMappingDefinition=Map[String,String]" class="extmbr" name="org.opencypher.graphddl.GraphDdlAst.PropertyToColumnMappingDefinition">PropertyToColumnMappingDefinition</a>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="ElementToViewDefinition.html" class="extype" name="org.opencypher.graphddl.ElementToViewDefinition">ElementToViewDefinition</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeToViewDefinitionextendsGraphDdlAstwithElementToViewDefinitionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeToViewMapping" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeToViewMappingextendsElementToViewMappingwithProductwithSerializable"></a>
+      <a id="NodeToViewMapping:NodeToViewMapping"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeToViewMapping.html"><span class="name">NodeToViewMapping</span></a><span class="params">(<span name="nodeType">nodeType: <a href="NodeType.html" class="extype" name="org.opencypher.graphddl.NodeType">NodeType</a></span>, <span name="view">view: <a href="ViewId.html" class="extype" name="org.opencypher.graphddl.ViewId">ViewId</a></span>, <span name="propertyMappings">propertyMappings: <a href="GraphDdl$.html#PropertyMappings=Map[String,String]" class="extmbr" name="org.opencypher.graphddl.GraphDdl.PropertyMappings">PropertyMappings</a></span>)</span><span class="result"> extends <a href="ElementToViewMapping.html" class="extype" name="org.opencypher.graphddl.ElementToViewMapping">ElementToViewMapping</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeToViewMappingextendsElementToViewMappingwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeTypeextendsProductwithSerializable"></a>
+      <a id="NodeType:NodeType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeType.html"><span class="name">NodeType</span></a><span class="params">(<span name="elementTypes">elementTypes: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeTypeextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeTypeDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeTypeDefinitionextendsGraphDdlAstwithGraphTypeStatementwithProductwithSerializable"></a>
+      <a id="NodeTypeDefinition:NodeTypeDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeTypeDefinition.html"><span class="name">NodeTypeDefinition</span></a><span class="params">(<span name="elementTypes">elementTypes: <span class="extype" name="scala.Predef.Set">Set</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="GraphTypeStatement.html" class="extype" name="org.opencypher.graphddl.GraphTypeStatement">GraphTypeStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeTypeDefinitionextendsGraphDdlAstwithGraphTypeStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeTypeToViewDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeTypeToViewDefinitionextendsGraphDdlAstwithProductwithSerializable"></a>
+      <a id="NodeTypeToViewDefinition:NodeTypeToViewDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeTypeToViewDefinition.html"><span class="name">NodeTypeToViewDefinition</span></a><span class="params">(<span name="nodeType">nodeType: <a href="NodeTypeDefinition.html" class="extype" name="org.opencypher.graphddl.NodeTypeDefinition">NodeTypeDefinition</a></span>, <span name="viewDef">viewDef: <a href="ViewDefinition.html" class="extype" name="org.opencypher.graphddl.ViewDefinition">ViewDefinition</a></span>, <span name="joinOn">joinOn: <a href="JoinOnDefinition.html" class="extype" name="org.opencypher.graphddl.JoinOnDefinition">JoinOnDefinition</a></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeTypeToViewDefinitionextendsGraphDdlAstwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeViewKey" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeViewKeyextendsElementViewKeywithProductwithSerializable"></a>
+      <a id="NodeViewKey:NodeViewKey"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeViewKey.html"><span class="name">NodeViewKey</span></a><span class="params">(<span name="nodeType">nodeType: <a href="NodeType.html" class="extype" name="org.opencypher.graphddl.NodeType">NodeType</a></span>, <span name="viewId">viewId: <a href="ViewId.html" class="extype" name="org.opencypher.graphddl.ViewId">ViewId</a></span>)</span><span class="result"> extends <a href="ElementViewKey.html" class="extype" name="org.opencypher.graphddl.ElementViewKey">ElementViewKey</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeViewKeyextendsElementViewKeywithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.RelationshipMappingDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RelationshipMappingDefinitionextendsGraphDdlAstwithGraphStatementwithProductwithSerializable"></a>
+      <a id="RelationshipMappingDefinition:RelationshipMappingDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="RelationshipMappingDefinition.html"><span class="name">RelationshipMappingDefinition</span></a><span class="params">(<span name="relType">relType: <a href="RelationshipTypeDefinition.html" class="extype" name="org.opencypher.graphddl.RelationshipTypeDefinition">RelationshipTypeDefinition</a></span>, <span name="relTypeToView">relTypeToView: <span class="extype" name="scala.List">List</span>[<a href="RelationshipTypeToViewDefinition.html" class="extype" name="org.opencypher.graphddl.RelationshipTypeToViewDefinition">RelationshipTypeToViewDefinition</a>]</span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="GraphStatement.html" class="extype" name="org.opencypher.graphddl.GraphStatement">GraphStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@RelationshipMappingDefinitionextendsGraphDdlAstwithGraphStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.RelationshipType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RelationshipTypeextendsProductwithSerializable"></a>
+      <a id="RelationshipType:RelationshipType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="RelationshipType.html"><span class="name">RelationshipType</span></a><span class="params">(<span name="startNodeType">startNodeType: <a href="NodeType.html" class="extype" name="org.opencypher.graphddl.NodeType">NodeType</a></span>, <span name="elementType">elementType: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="endNodeType">endNodeType: <a href="NodeType.html" class="extype" name="org.opencypher.graphddl.NodeType">NodeType</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@RelationshipTypeextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.RelationshipTypeDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RelationshipTypeDefinitionextendsGraphDdlAstwithGraphTypeStatementwithProductwithSerializable"></a>
+      <a id="RelationshipTypeDefinition:RelationshipTypeDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="RelationshipTypeDefinition.html"><span class="name">RelationshipTypeDefinition</span></a><span class="params">(<span name="sourceNodeType">sourceNodeType: <a href="NodeTypeDefinition.html" class="extype" name="org.opencypher.graphddl.NodeTypeDefinition">NodeTypeDefinition</a></span>, <span name="elementType">elementType: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="targetNodeType">targetNodeType: <a href="NodeTypeDefinition.html" class="extype" name="org.opencypher.graphddl.NodeTypeDefinition">NodeTypeDefinition</a></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="GraphTypeStatement.html" class="extype" name="org.opencypher.graphddl.GraphTypeStatement">GraphTypeStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@RelationshipTypeDefinitionextendsGraphDdlAstwithGraphTypeStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.RelationshipTypeToViewDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RelationshipTypeToViewDefinitionextendsGraphDdlAstwithElementToViewDefinitionwithProductwithSerializable"></a>
+      <a id="RelationshipTypeToViewDefinition:RelationshipTypeToViewDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="RelationshipTypeToViewDefinition.html"><span class="name">RelationshipTypeToViewDefinition</span></a><span class="params">(<span name="viewDef">viewDef: <a href="ViewDefinition.html" class="extype" name="org.opencypher.graphddl.ViewDefinition">ViewDefinition</a></span>, <span name="maybePropertyMapping">maybePropertyMapping: <span class="extype" name="scala.Option">Option</span>[<a href="GraphDdlAst$.html#PropertyToColumnMappingDefinition=Map[String,String]" class="extmbr" name="org.opencypher.graphddl.GraphDdlAst.PropertyToColumnMappingDefinition">PropertyToColumnMappingDefinition</a>] = <span class="symbol">None</span></span>, <span name="startNodeTypeToView">startNodeTypeToView: <a href="NodeTypeToViewDefinition.html" class="extype" name="org.opencypher.graphddl.NodeTypeToViewDefinition">NodeTypeToViewDefinition</a></span>, <span name="endNodeTypeToView">endNodeTypeToView: <a href="NodeTypeToViewDefinition.html" class="extype" name="org.opencypher.graphddl.NodeTypeToViewDefinition">NodeTypeToViewDefinition</a></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="ElementToViewDefinition.html" class="extype" name="org.opencypher.graphddl.ElementToViewDefinition">ElementToViewDefinition</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@RelationshipTypeToViewDefinitionextendsGraphDdlAstwithElementToViewDefinitionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.SetSchemaDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="SetSchemaDefinitionextendsGraphDdlAstwithDdlStatementwithProductwithSerializable"></a>
+      <a id="SetSchemaDefinition:SetSchemaDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="SetSchemaDefinition.html"><span class="name">SetSchemaDefinition</span></a><span class="params">(<span name="dataSource">dataSource: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="schema">schema: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <a href="DdlStatement.html" class="extype" name="org.opencypher.graphddl.DdlStatement">DdlStatement</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@SetSchemaDefinitionextendsGraphDdlAstwithDdlStatementwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.StartNode" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="StartNodeextendsProductwithSerializable"></a>
+      <a id="StartNode:StartNode"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="StartNode.html"><span class="name">StartNode</span></a><span class="params">(<span name="nodeViewKey">nodeViewKey: <a href="NodeViewKey.html" class="extype" name="org.opencypher.graphddl.NodeViewKey">NodeViewKey</a></span>, <span name="joinPredicates">joinPredicates: <span class="extype" name="scala.List">List</span>[<a href="Join.html" class="extype" name="org.opencypher.graphddl.Join">Join</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@StartNodeextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.TypeException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TypeExceptionextendsGraphDdlExceptionwithProductwithSerializable"></a>
+      <a id="TypeException:TypeException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="TypeException.html"><span class="name">TypeException</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cause">cause: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Exception">Exception</span>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlException.html" class="extype" name="org.opencypher.graphddl.GraphDdlException">GraphDdlException</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@TypeExceptionextendsGraphDdlExceptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.UnresolvedReferenceException" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="UnresolvedReferenceExceptionextendsGraphDdlExceptionwithProductwithSerializable"></a>
+      <a id="UnresolvedReferenceException:UnresolvedReferenceException"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="UnresolvedReferenceException.html"><span class="name">UnresolvedReferenceException</span></a><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="cause">cause: <span class="extype" name="scala.Option">Option</span>[<span class="extype" name="scala.Exception">Exception</span>] = <span class="symbol">None</span></span>)</span><span class="result"> extends <a href="GraphDdlException.html" class="extype" name="org.opencypher.graphddl.GraphDdlException">GraphDdlException</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@UnresolvedReferenceExceptionextendsGraphDdlExceptionwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.ViewDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ViewDefinitionextendsGraphDdlAstwithProductwithSerializable"></a>
+      <a id="ViewDefinition:ViewDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ViewDefinition.html"><span class="name">ViewDefinition</span></a><span class="params">(<span name="viewId">viewId: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="alias">alias: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <a href="GraphDdlAst.html" class="extype" name="org.opencypher.graphddl.GraphDdlAst">GraphDdlAst</a> with <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ViewDefinitionextendsGraphDdlAstwithProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.ViewId" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ViewIdextendsProductwithSerializable"></a>
+      <a id="ViewId:ViewId"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ViewId.html"><span class="name">ViewId</span></a><span class="params">(<span name="maybeSetSchema">maybeSetSchema: <span class="extype" name="scala.Option">Option</span>[<a href="SetSchemaDefinition.html" class="extype" name="org.opencypher.graphddl.SetSchemaDefinition">SetSchemaDefinition</a>]</span>, <span name="parts">parts: <span class="extype" name="scala.List">List</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@ViewIdextendsProductwithSerializable" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="org.opencypher.graphddl.GraphDdl" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphDdl"></a>
+      <a id="GraphDdl:GraphDdl"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDdl$.html"><span class="name">GraphDdl</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDdl" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphDdlAst" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphDdlAst"></a>
+      <a id="GraphDdlAst:GraphDdlAst"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDdlAst$.html"><span class="name">GraphDdlAst</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDdlAst" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.GraphDdlParser" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="GraphDdlParser"></a>
+      <a id="GraphDdlParser:GraphDdlParser"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="GraphDdlParser$.html"><span class="name">GraphDdlParser</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@GraphDdlParser" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeType"></a>
+      <a id="NodeType:NodeType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeType$.html"><span class="name">NodeType</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeType" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.NodeTypeDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="NodeTypeDefinition"></a>
+      <a id="NodeTypeDefinition:NodeTypeDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="NodeTypeDefinition$.html"><span class="name">NodeTypeDefinition</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@NodeTypeDefinition" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.RelationshipType" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RelationshipType"></a>
+      <a id="RelationshipType:RelationshipType"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RelationshipType$.html"><span class="name">RelationshipType</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@RelationshipType" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="org.opencypher.graphddl.RelationshipTypeDefinition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="RelationshipTypeDefinition"></a>
+      <a id="RelationshipTypeDefinition:RelationshipTypeDefinition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="RelationshipTypeDefinition$.html"><span class="name">RelationshipTypeDefinition</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../index.html#org.opencypher.graphddl.package@RelationshipTypeDefinition" title="Permalink" target="_top">
+        <img src="../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
