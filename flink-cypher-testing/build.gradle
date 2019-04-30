@@ -7,6 +7,9 @@ dependencies {
     compile project(':okapi-testing')
     compile project(':okapi-neo4j-io-testing')
 
+    compile group: 'org.apache.flink', name: "flink-table".scala(), version: ver.flink
+    compile group: 'org.apache.flink', name: "flink-scala".scala(), version: ver.flink
+    compile group: 'org.apache.flink', name: "flink-streaming-scala".scala(), version: ver.flink
     testCompile project(':okapi-api').sourceSets.test.output
 }
 

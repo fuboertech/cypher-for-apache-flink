@@ -30,12 +30,12 @@ import java.net.URI
 
 import org.apache.flink.api.scala._
 import org.apache.flink.table.api.scala._
-import org.opencypher.flink.api.io.{CAPFNodeTable, CAPFRelationshipTable}
+import org.opencypher.flink.api.io.CAPFEntityTable
 import org.opencypher.flink.api.{CAPFSession, GraphSources}
 import org.opencypher.flink.impl.CAPFConverters._
 import org.opencypher.okapi.api.configuration.Configuration.PrintTimings
 import org.opencypher.okapi.api.graph.Namespace
-import org.opencypher.okapi.api.io.conversion.{NodeMapping, RelationshipMapping}
+import org.opencypher.okapi.api.io.conversion.{NodeMappingBuilder, RelationshipMappingBuilder}
 import org.opencypher.okapi.impl.util.Measurement
 import org.opencypher.okapi.ir.api.configuration.IrConfiguration.PrintIr
 import org.opencypher.okapi.logical.api.configuration.LogicalConfiguration.PrintLogicalPlan
@@ -51,22 +51,23 @@ object Demo extends App {
   val nodes = session.tableEnv.fromDataSet(nodeDataSet, 'ID, 'EMPLOYEE, 'NAME, 'AGE)
   val rels = session.tableEnv.fromDataSet(relsDataSet, 'ID, 'SOURCE, 'TARGET, 'TYPE, 'SINCE)
 
-  val nodeMapping = NodeMapping
+  val nodeMapping = NodeMappingBuilder
     .withSourceIdKey("ID")
     .withImpliedLabel("Person")
-    .withOptionalLabel("Employee", "EMPLOYEE")
     .withPropertyKey("name", "NAME")
     .withPropertyKey("age", "AGE")
+    .build
 
-  val relMapping = RelationshipMapping
+  val relMapping = RelationshipMappingBuilder
     .withSourceIdKey("ID")
     .withSourceStartNodeKey("SOURCE")
     .withSourceEndNodeKey("TARGET")
-    .withSourceRelTypeKey("TYPE", Set("KNOWS"))
+    .withRelType("KNOWS")
     .withPropertyKey("since", "SINCE")
+    .build
 
-  val nodeTable = CAPFNodeTable.fromMapping(nodeMapping, nodes)
-  val relTable = CAPFRelationshipTable.fromMapping(relMapping, rels)
+  val nodeTable = CAPFEntityTable.create(nodeMapping, nodes)
+  val relTable = CAPFEntityTable.create(relMapping, rels)
 
   val graph = session.readFrom(nodeTable, relTable)
 
@@ -226,24 +227,26 @@ object CircularDemo extends App {
     session.env.fromCollection(nodes),
     'id, 'prop
   )
-  val nodeMapping = NodeMapping
+  val nodeMapping = NodeMappingBuilder
     .on("id")
     .withImpliedLabel("node")
     .withPropertyKey("prop")
+    .build
 
   val relTable = session.tableEnv.fromDataSet(
     session.env.fromCollection(rels),
     'id, 'source, 'target, 'prop
   )
-  val relMapping = RelationshipMapping
+  val relMapping = RelationshipMappingBuilder
     .on("id")
     .from("source")
     .to("target")
     .relType("relationship")
     .withPropertyKey("prop")
+    .build
 
-  val capfNodeTable = CAPFNodeTable.fromMapping(nodeMapping, nodeTable)
-  val capfRelTable = CAPFRelationshipTable.fromMapping(relMapping, relTable)
+  val capfNodeTable = CAPFEntityTable.create(nodeMapping, nodeTable)
+  val capfRelTable = CAPFEntityTable.create(relMapping, relTable)
 
   val graph = session.readFrom(capfNodeTable, capfRelTable)
 
@@ -301,13 +304,13 @@ object IntegerBug extends App {
     'rel_id, 'start, 'end
   )
 
-  val nodeMapping1 = NodeMapping.withSourceIdKey("node_id").withImpliedLabel("node1").withPropertyKey("prop1")
-  val nodeMapping2 = NodeMapping.withSourceIdKey("node_id").withImpliedLabel("node2").withPropertyKey("prop2")
-  val relMapping = RelationshipMapping.withSourceIdKey("rel_id").withSourceStartNodeKey("start").withSourceEndNodeKey("end").relType("relationship")
+  val nodeMapping1 = NodeMappingBuilder.withSourceIdKey("node_id").withImpliedLabel("node1").withPropertyKey("prop1").build
+  val nodeMapping2 = NodeMappingBuilder.withSourceIdKey("node_id").withImpliedLabel("node2").withPropertyKey("prop2").build
+  val relMapping = RelationshipMappingBuilder.withSourceIdKey("rel_id").withSourceStartNodeKey("start").withSourceEndNodeKey("end").relType("relationship").build
 
-  val capfNodeTable1 = CAPFNodeTable.fromMapping(nodeMapping1, nodeTable1)
-  val capfNodeTable2 = CAPFNodeTable.fromMapping(nodeMapping2, nodeTable2)
-  val capfRelTable = CAPFRelationshipTable.fromMapping(relMapping, relTable)
+  val capfNodeTable1 = CAPFEntityTable.create(nodeMapping1, nodeTable1)
+  val capfNodeTable2 = CAPFEntityTable.create(nodeMapping2, nodeTable2)
+  val capfRelTable = CAPFEntityTable.create(relMapping, relTable)
 
   PrintRelationalPlan.set()
   val graph = session.readFrom(capfNodeTable1, capfRelTable, capfNodeTable2)
@@ -358,33 +361,37 @@ object ThesisDemo extends App {
     'ID, 'SOURCE, 'TARGET
   )
 
-  val musicMapping = NodeMapping
+  val musicMapping = NodeMappingBuilder
     .withSourceIdKey("ID")
     .withPropertyKey("genre")
     .withImpliedLabel("Music")
+    .build
 
-  val personMapping = NodeMapping
+  val personMapping = NodeMappingBuilder
     .withSourceIdKey("ID")
     .withPropertyKeys("name", "age")
     .withImpliedLabel("Person")
+    .build
 
-  val knowsMapping = RelationshipMapping
+  val knowsMapping = RelationshipMappingBuilder
     .withSourceIdKey("ID")
     .withSourceStartNodeKey("SOURCE")
     .withSourceEndNodeKey("TARGET")
     .withRelType("KNOWS")
     .withPropertyKey("since")
+    .build
 
-  val likesMapping = RelationshipMapping
+  val likesMapping = RelationshipMappingBuilder
     .withSourceIdKey("ID")
     .withSourceStartNodeKey("SOURCE")
     .withSourceEndNodeKey("TARGET")
     .withRelType("LIKES")
+    .build
 
-  val music = CAPFNodeTable.fromMapping(musicMapping, musicTable)
-  val person = CAPFNodeTable.fromMapping(personMapping, personTable)
-  val knows = CAPFRelationshipTable.fromMapping(knowsMapping, knowsTable)
-  val likes = CAPFRelationshipTable.fromMapping(likesMapping, likesTable)
+  val music = CAPFEntityTable.create(musicMapping, musicTable)
+  val person = CAPFEntityTable.create(personMapping, personTable)
+  val knows = CAPFEntityTable.create(knowsMapping, knowsTable)
+  val likes = CAPFEntityTable.create(likesMapping, likesTable)
 
   val graph = session.readFrom(music, person, knows, likes)
 

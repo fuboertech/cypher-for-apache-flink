@@ -93,27 +93,18 @@ abstract class AbstractPropertyGraphDataSource extends CAPFPropertyGraphDataSour
       val capfSchema: CAPFSchema = schema(graphName).get
       val capfMetaData: CAPFGraphMetaData = readCAPFGraphMetaData(graphName)
       val nodeTables = capfSchema.allCombinations.map { combo =>
-        val propertyColsWithCypherType = capfSchema.nodePropertyKeysForCombinations(Set(combo)).map {
-          case (key, cypherType) => key.toPropertyColumnName -> cypherType
-        }
-
-        val columnsWithCypherType = propertyColsWithCypherType + (GraphEntity.sourceIdKey -> CTInteger)
         val table = readNodeTable(graphName, combo, capfSchema.canonicalNodeFieldReference(combo))
         CAPFNodeTable(combo, table)
       }
 
       val relTables = capfSchema.relationshipTypes.map { relType =>
-        val propertyColsWithCypherType = capfSchema.relationshipPropertyKeys(relType).map {
-          case (key, cypherType) => key.toPropertyColumnName -> cypherType
-        }
-
-        val table = readRelationshipTable(graphName, relType, capfSchema.canonicalRelFieldReference(relType))
+                val table = readRelationshipTable(graphName, relType, capfSchema.canonicalRelFieldReference(relType))
         CAPFRelationshipTable(relType, table)
       }
       if (nodeTables.isEmpty) {
         capf.graphs.empty
       } else {
-        capf.graphs.create(capfMetaData.tags, Some(capfSchema), (nodeTables ++ relTables).toSeq: _*)
+        capf.graphs.create(Some(capfSchema), (nodeTables ++ relTables).toSeq: _*)
       }
     }
   }
@@ -143,7 +134,7 @@ abstract class AbstractPropertyGraphDataSource extends CAPFPropertyGraphDataSour
       val schema = relationalGraph.schema.asCapf
       schemaCache += graphName -> schema
       graphNameCache += graphName
-      writeCAPFGraphMetaData(graphName, CAPFGraphMetaData(tableStorageFormat.name, relationalGraph.tags))
+      writeCAPFGraphMetaData(graphName, CAPFGraphMetaData(tableStorageFormat.name))
       writeSchema(graphName, schema)
 
       val nodeWrites = schema.labelCombinations.combos.map { combo =>

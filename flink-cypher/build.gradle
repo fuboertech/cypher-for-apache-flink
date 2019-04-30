@@ -13,6 +13,7 @@ dependencies {
     compileOnly group: 'org.apache.flink', name: "flink-scala".scala(), version: ver.flink
     compileOnly group: 'org.apache.flink', name: "flink-streaming-scala".scala(), version: ver.flink
     compileOnly group: 'org.apache.flink', name: "flink-orc".scala(), version: ver.flink
+    compileOnly group: 'org.apache.hadoop', name: "hadoop-common", version: ver.hadoop
 }
 
 task allJar(type: ShadowJar) {

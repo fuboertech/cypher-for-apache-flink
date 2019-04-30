@@ -63,7 +63,7 @@ object CAPFSchema {
                     } else {
                       s"The conflict appears between label combinations ${combo1.mkString("[", ", ", "]")} and ${combo2.mkString("[", ", ", "]")}."
                     }
-                    throw SchemaException(s"The property type '$join' for property '$k' can not be stored in a Spark column. " + explanation)
+                    throw SchemaException(s"The property type '$join' for property '$k' can not be stored in a Flink column. " + explanation)
                   }
                 }
               }

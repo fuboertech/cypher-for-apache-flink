@@ -66,6 +66,8 @@ object FlinkConversions {
     }
 
     def isFlinkCompatible: Boolean = toFlinkType.isDefined
+
+    def ensureFlinkCompatible(): Unit = getFlinkType
   }
 
   val supportedTypes = Seq(

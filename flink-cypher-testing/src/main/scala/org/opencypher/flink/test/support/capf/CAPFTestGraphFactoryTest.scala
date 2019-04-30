@@ -28,10 +28,10 @@ package org.opencypher.flink.test.support.capf
 
 import org.apache.flink.api.scala._
 import org.apache.flink.table.api.scala._
-import org.opencypher.flink.api.io.{CAPFNodeTable, CAPFRelationshipTable}
+import org.opencypher.flink.api.io.{CAPFEntityTable, CAPFNodeTable, CAPFRelationshipTable}
 import org.opencypher.flink.test.CAPFTestSuite
 import org.opencypher.flink.test.support.GraphMatchingTestSupport
-import org.opencypher.okapi.api.io.conversion.{NodeMapping, RelationshipMapping}
+import org.opencypher.okapi.api.io.conversion.{NodeMappingBuilder, RelationshipMappingBuilder}
 import org.opencypher.okapi.api.schema.Schema
 import org.opencypher.okapi.api.types.CTString
 import org.opencypher.okapi.testing.propertygraph.CreateGraphFactory
@@ -52,50 +52,59 @@ abstract class CAPFTestGraphFactoryTest extends CAPFTestSuite with GraphMatching
       |CREATE (martin)-[:SPEAKS]->(orbital)
     """.stripMargin
 
-  val personTable: CAPFNodeTable = CAPFNodeTable.fromMapping(NodeMapping
+  val personAstronautTable: CAPFEntityTable = CAPFEntityTable.create(NodeMappingBuilder
     .on("ID")
-    .withImpliedLabel("Person")
-    .withOptionalLabel("Astronaut" -> "IS_ASTRONAUT")
-    .withOptionalLabel("Martian" -> "IS_MARTIAN")
-    .withPropertyKey("name" -> "NAME"), capf.tableEnv.fromDataSet(
-      capf.env.fromCollection(
-        Seq(
-          (0L, true, false, "Max"),
-          (1L, false, true, "Martin")
-        )
-      ),
-      'ID, 'IS_ASTRONAUT, 'IS_MARTIAN, 'NAME
-    )
+    .withImpliedLabels("Person", "Astronaut")
+    .withPropertyKey("name" -> "NAME")
+    .withPropertyKey("birthday" -> "BIRTHDAY")
+    .build, capf.tableEnv.fromDataSet(
+    capf.env.fromCollection(
+      Seq(0L, "Max", "1991-07-10")
+    ),
+    'ID, 'IS_ASTRONAUT, 'IS_MARTIAN, 'NAME)
   )
 
-  val languageTable: CAPFNodeTable = CAPFNodeTable.fromMapping(NodeMapping
+  val personMartianTable: CAPFEntityTable = CAPFEntityTable.create(NodeMappingBuilder
       .on("ID")
-      .withImpliedLabel("Language")
-      .withPropertyKey("title" -> "TITLE"), capf.tableEnv.fromDataSet(
-      capf.env.fromCollection(
-        Seq(
-          (2L, "Swedish"),
-          (3L, "German"),
-          (4L, "Orbital")
-        )
-      ),
-      'ID, 'TITLE
-    )
+      .withImpliedLabels("Person", "Martian")
+      .withPropertyKey("name" -> "NAME")
+      .build, capf.tableEnv.fromDataSet(
+    capf.env.fromCollection(
+      Seq(1L, "Martin")
+    ),
+    'ID, 'NAME)
   )
 
-  val knowsScan: CAPFRelationshipTable = CAPFRelationshipTable.fromMapping(RelationshipMapping
+  val languageTable: CAPFEntityTable = CAPFEntityTable.create(NodeMappingBuilder
     .on("ID")
-    .from("SRC").to("DST").relType("KNOWS"), capf.tableEnv.fromDataSet(
-      capf.env.fromCollection(
-        Seq(
-          (0L, 5L, 2L),
-          (0L, 6L, 3L),
-          (1L, 7L, 3L),
-          (1L, 8L, 4L)
-        )
-      ),
-      'SRC, 'ID, 'DST
-    )
+    .withImpliedLabel("Language")
+    .withPropertyKey("title" -> "TITLE")
+    .build, capf.tableEnv.fromDataSet(
+    capf.env.fromCollection(
+      Seq(
+        (2L, "Swedish"),
+        (3L, "German"),
+        (4L, "Orbital")
+      )
+    ),
+    'ID, 'TITLE
+  )
+  )
+
+  val knowsScan: CAPFEntityTable = CAPFEntityTable.create(RelationshipMappingBuilder
+    .on("ID")
+    .from("SRC").to("DST").relType("KNOWS")
+    .build, capf.tableEnv.fromDataSet(
+    capf.env.fromCollection(
+      Seq(
+        (0L, 5L, 2L),
+        (0L, 6L, 3L),
+        (1L, 7L, 3L),
+        (1L, 8L, 4L)
+      )
+    ),
+    'SRC, 'ID, 'DST
+  )
   )
 
   test("testSchema") {
@@ -109,7 +118,7 @@ abstract class CAPFTestGraphFactoryTest extends CAPFTestSuite with GraphMatching
 
   test("testAsScanGraph") {
     val propertyGraph = CreateGraphFactory(createQuery)
-    CAPFScanGraphFactory(propertyGraph) shouldMatch capf.graphs.create(personTable, languageTable, knowsScan)
+    CAPFScanGraphFactory(propertyGraph) shouldMatch capf.graphs.create(personAstronautTable, personMartianTable, languageTable, knowsScan)
   }
 }
 

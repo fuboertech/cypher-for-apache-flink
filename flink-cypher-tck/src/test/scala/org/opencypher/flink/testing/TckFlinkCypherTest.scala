@@ -52,8 +52,8 @@ class TckFlinkCypherTest extends CAPFTestSuite {
   private val blacklistFile = getClass.getResource("/scenario_blacklist").getFile
   private val scenarios = ScenariosFor(blacklistFile)
 
-//  PrintPhysicalPlan.set()
-//  PrintOptimizedPhysicalPlan.set()
+  //  PrintPhysicalPlan.set()
+  //  PrintOptimizedPhysicalPlan.set()
 
   forAll(factories) { (factory, additional_blacklist) =>
     forAll(scenarios.whiteList) { scenario =>
@@ -84,7 +84,7 @@ class TckFlinkCypherTest extends CAPFTestSuite {
     CypherTCK
       .parseFilesystemFeature(file)
       .scenarios
-      .foreach(scenario => scenario(TCKGraph(defaultFactory,  capf.graphs.empty)).execute())
+      .foreach(scenario => scenario(TCKGraph(defaultFactory, capf.graphs.empty)).execute())
   }
 
   it("run Single Scenario") {

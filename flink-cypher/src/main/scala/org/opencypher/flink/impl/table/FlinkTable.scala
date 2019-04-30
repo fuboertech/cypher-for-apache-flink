@@ -64,6 +64,15 @@ object FlinkCypherTable {
       table.select(cols.map(UnresolvedFieldReference): _*)
     }
 
+    override def select(col: (String, String), cols: (String, String)*): FlinkTable = {
+      val columns = col +: cols
+      if (table.columns == columns.map { case (_, alias) => alias }) {
+        table
+      } else {
+        table.select(columns.map { case (colName, alias) => UnresolvedFieldReference(colName) as Symbol(alias) }: _*)
+      }
+    }
+
     override def filter(expr: Expr)(implicit header: RecordHeader, parameters: CypherValue.CypherMap): FlinkTable = {
       table.filter(expr.asFlinkSQLExpr(header, table, parameters))
     }
@@ -105,7 +114,7 @@ object FlinkCypherTable {
       table.orderBy(mappedSortItems: _*)
     }
 
-    override def group(by: Set[Var], aggregations: Set[(Aggregator, (String, CypherType))])
+    override def group(by: Set[Var], aggregations: Map[String, Aggregator])
       (implicit header: RecordHeader, parameters: CypherMap): FlinkTable = {
 
       def withInnerExpr(expr: Expr)(f: Expression => Expression) =
@@ -125,40 +134,7 @@ object FlinkCypherTable {
         } else Right(table)
 
       val flinkAggFunctions = aggregations.map {
-        case (aggFunc, (colName, cypherType)) =>
-          val columnName = Symbol(colName)
-          aggFunc match {
-            case Avg(expr) =>
-              withInnerExpr(expr)(
-                _.avg
-                  .cast(aggFunc.cypherType.getFlinkType)
-                  .as(columnName)
-              )
-
-            case CountStar(_) =>
-              withInnerExpr(IntegerLit(0)(CTInteger))(_.count.as(columnName))
-
-            case Count(expr, _) => withInnerExpr(expr)( column =>
-              column.count
-                .as(columnName))
-
-            case Max(expr) =>
-              withInnerExpr(expr)(_.max.as(columnName))
-
-            case Min(expr) =>
-              withInnerExpr(expr)(_.min.as(columnName))
-
-            case Sum(expr) =>
-              withInnerExpr(expr)(_.sum.as(columnName))
-
-            case Collect(expr, _) => withInnerExpr(expr) { column =>
-              val list = array(column)
-              list as columnName
-            }
-
-            case x =>
-              throw NotImplementedException(s"Aggregation function $x")
-          }
+        case (columnName, aggFunc) => aggFunc.asFlinkSQLExpr(header, table, parameters).as(Symbol(columnName))
       }
 
       data.fold(
@@ -212,11 +188,11 @@ object FlinkCypherTable {
     override def distinct(cols: String*): FlinkTable =
       table.distinct()
 
-    override def withColumnRenamed(oldColumn: String, newColumn: String): FlinkTable =
-      table.safeRenameColumn(oldColumn, newColumn)
 
-    override def columnsFor(returnItem: String): Set[String] =
-      throw UnsupportedOperationException("A FlinkTable does not have return items")
+  }
+
+  implicit class TableMeta(val table: Table) extends AnyVal {
+
   }
 
 }

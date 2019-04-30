@@ -45,7 +45,7 @@ import org.opencypher.okapi.relational.api.io.EntityTable
 import org.opencypher.okapi.relational.api.table.{RelationalCypherRecords, RelationalCypherRecordsFactory}
 import org.opencypher.okapi.relational.impl.table._
 
-case class CAPFRecordsFactory(implicit capf: CAPFSession) extends RelationalCypherRecordsFactory[FlinkTable] {
+case class CAPFRecordsFactory()(implicit capf: CAPFSession) extends RelationalCypherRecordsFactory[FlinkTable] {
 
   override type Records = CAPFRecords
 

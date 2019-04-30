@@ -29,9 +29,9 @@ package org.opencypher.flink.test.fixture
 import org.apache.flink.api.scala._
 import org.apache.flink.table.api.Table
 import org.apache.flink.types.Row
-import org.opencypher.flink.api.io.{CAPFNodeTable, CAPFRelationshipTable}
+import org.opencypher.flink.api.io.{CAPFEntityTable, CAPFNodeTable, CAPFRelationshipTable}
 import org.opencypher.flink.api.value.{CAPFNode, CAPFRelationship}
-import org.opencypher.okapi.api.io.conversion.{NodeMapping, RelationshipMapping}
+import org.opencypher.okapi.api.io.conversion.{EntityMapping, NodeMappingBuilder, RelationshipMappingBuilder}
 import org.opencypher.okapi.api.schema.Schema
 import org.opencypher.okapi.api.types.{CTInteger, CTList, CTString, CTVoid}
 import org.opencypher.okapi.api.value.CypherValue.{CypherList, CypherMap}
@@ -142,12 +142,12 @@ trait TeamDataFixture extends TestDataFixture {
     mutable.WrappedArray.make(s)
   }
 
-  private lazy val personMapping: NodeMapping = NodeMapping
+  private lazy val personMapping: EntityMapping = NodeMappingBuilder
     .on("ID")
     .withImpliedLabel("Person")
-    .withOptionalLabel("Swedish" -> "IS_SWEDE")
     .withPropertyKey("name" -> "NAME")
     .withPropertyKey("luckyNumber" -> "NUM")
+    .build
 
   protected lazy val personDF: Table = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -160,10 +160,10 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val personTable = CAPFNodeTable.fromMapping(personMapping, personDF)
+  lazy val personTable = CAPFEntityTable.create(personMapping, personDF)
 
-  private lazy val knowsMapping: RelationshipMapping = RelationshipMapping
-    .on("ID").from("SRC").to("DST").relType("KNOWS").withPropertyKey("since" -> "SINCE")
+  private lazy val knowsMapping: EntityMapping = RelationshipMappingBuilder
+    .on("ID").from("SRC").to("DST").relType("KNOWS").withPropertyKey("since" -> "SINCE").build
 
   protected lazy val knowsDF: Table = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -178,15 +178,16 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val knowsTable = CAPFRelationshipTable.fromMapping(knowsMapping, knowsDF)
+  lazy val knowsTable = CAPFEntityTable.create(knowsMapping, knowsDF)
 
-  private lazy val programmerMapping = NodeMapping
+  private lazy val programmerMapping = NodeMappingBuilder
     .on("ID")
     .withImpliedLabel("Programmer")
     .withImpliedLabel("Person")
     .withPropertyKey("name" -> "NAME")
     .withPropertyKey("luckyNumber" -> "NUM")
     .withPropertyKey("language" -> "LANG")
+    .build
 
   private lazy val programmerDF: Table = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -199,13 +200,14 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val programmerTable = CAPFNodeTable.fromMapping(programmerMapping, programmerDF)
+  lazy val programmerTable = CAPFEntityTable.create(programmerMapping, programmerDF)
 
-  private lazy val brogrammerMapping = NodeMapping
+  private lazy val brogrammerMapping = NodeMappingBuilder
     .on("ID")
     .withImpliedLabel("Brogrammer")
     .withImpliedLabel("Person")
     .withPropertyKey("language" -> "LANG")
+    .build
 
   private lazy val brogrammerDF = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -218,13 +220,14 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val brogrammerTable = CAPFNodeTable.fromMapping(brogrammerMapping, brogrammerDF)
+  lazy val brogrammerTable = CAPFEntityTable.create(brogrammerMapping, brogrammerDF)
 
-  private lazy val bookMapping = NodeMapping
+  private lazy val bookMapping = NodeMappingBuilder
     .on("ID")
     .withImpliedLabel("Book")
     .withPropertyKey("title" -> "NAME")
     .withPropertyKey("year" -> "YEAR")
+    .build
 
   private lazy val bookDF: Table = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -237,10 +240,10 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val  bookTable = CAPFNodeTable.fromMapping(bookMapping, bookDF)
+  lazy val  bookTable = CAPFEntityTable.create(bookMapping, bookDF)
 
-  private lazy val readsMapping = RelationshipMapping
-    .on("ID").from("SRC").to("DST").relType("READS").withPropertyKey("recommends" -> "RECOMMENDS")
+  private lazy val readsMapping = RelationshipMappingBuilder
+    .on("ID").from("SRC").to("DST").relType("READS").withPropertyKey("recommends" -> "RECOMMENDS").build
 
   private lazy val readsDF = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -253,10 +256,10 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val readsTable = CAPFRelationshipTable.fromMapping(readsMapping, readsDF)
+  lazy val readsTable = CAPFEntityTable.create(readsMapping, readsDF)
 
-  private lazy val influencesMapping = RelationshipMapping
-    .on("ID").from("SRC").to("DST").relType("INFLUENCES")
+  private lazy val influencesMapping = RelationshipMappingBuilder
+    .on("ID").from("SRC").to("DST").relType("INFLUENCES").build
 
   private lazy val influencesDF: Table = capf.tableEnv.fromDataSet(
     capf.env.fromCollection(
@@ -264,7 +267,7 @@ trait TeamDataFixture extends TestDataFixture {
     )
   )
 
-  lazy val influencesTable = CAPFRelationshipTable.fromMapping(influencesMapping, influencesDF)
+  lazy val influencesTable = CAPFEntityTable.create(influencesMapping, influencesDF)
 
 }
 

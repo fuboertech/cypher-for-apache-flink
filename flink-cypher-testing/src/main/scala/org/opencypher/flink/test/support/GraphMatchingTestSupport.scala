@@ -26,10 +26,9 @@
  */
 package org.opencypher.flink.test.support
 
-import org.apache.flink.api.scala._
-import org.apache.flink.table.api.scala._
 import org.apache.flink.api.scala.ExecutionEnvironment
 import org.apache.flink.table.api.BatchTableEnvironment
+import org.apache.flink.table.api.scala._
 import org.opencypher.flink.impl.table.FlinkCypherTable.FlinkTable
 import org.opencypher.flink.test.fixture.{CAPFSessionFixture, FlinkSessionFixture}
 import org.opencypher.okapi.relational.api.graph.RelationalCypherGraph
