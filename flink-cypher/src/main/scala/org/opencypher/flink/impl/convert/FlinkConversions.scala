@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.opencypher.okapi.relational.impl.table.RecordHeader
 
 object FlinkConversions {
   implicit class CypherTypeOps(val ct: CypherType) extends AnyVal {
+
     def toFlinkType: Option[TypeInformation[_]] = ct match {
       case CTNull | CTVoid => Some(Types.BOOLEAN) // TODO: boolean is just a dummy
       case _ => ct.material match {

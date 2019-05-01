@@ -104,7 +104,7 @@ object SparkTable {
       df.drop(cols: _*)
     }
 
-    override def cross(other: DataFrameTable)(implicit session: RelationalCypherSession[DataFrameTable]): DataFrameTable = ???
+    override def cross(other: DataFrameTable)(implicit session: RelationalCypherSession[DataFrameTable]): DataFrameTable = join(other, CrossJoin)
 
     override def orderBy(sortItems: (Expr, Order)*)
       (implicit header: RecordHeader, parameters: CypherMap): DataFrameTable = {

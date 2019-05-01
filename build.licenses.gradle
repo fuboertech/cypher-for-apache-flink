@@ -160,6 +160,8 @@ subprojects {
  'spark-cypher-tck',
  'spark-cypher-testing',
  'spark-cypher-jmh',
+ 'flink-cypher-tck',
+ 'flink-cypher-testing',
  'documentation',
 ].each {
     project(it).tasks.validateLicenses.enabled = false

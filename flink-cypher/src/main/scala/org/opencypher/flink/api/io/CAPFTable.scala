@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 "Neo4j Sweden, AB" [https://neo4j.com]
+ * Copyright (c) 2016-2019 "Neo4j Sweden, AB" [https://neo4j.com]
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import org.opencypher.flink.impl.TableOps._
 import org.opencypher.flink.impl.table.FlinkCypherTable.FlinkTable
 import org.opencypher.flink.impl.{CAPFRecords, RecordBehaviour}
 import org.opencypher.okapi.api.io.conversion.{EntityMapping, NodeMappingBuilder, RelationshipMappingBuilder}
-import org.opencypher.okapi.api.types.CTString
+import org.opencypher.okapi.api.types.{CTInteger, CTString}
 import org.opencypher.okapi.impl.util.StringEncodingUtilities._
 import org.opencypher.okapi.relational.api.io.EntityTable
 import org.opencypher.okapi.relational.api.table.RelationalEntityTableFactory
@@ -61,6 +61,12 @@ case class CAPFEntityTable private[flink](
   override def cache(): CAPFEntityTable = {
     this.cache()
     this
+  }
+
+  override protected def verify(): Unit = {
+    mapping.idKeys.values.toSeq.flatten.foreach {
+      case (_, column) => table.verifyColumnType(column, CTInteger, "id key")
+    }
   }
 }
 
